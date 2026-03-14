@@ -1,0 +1,15 @@
+{
+  "name": "effimera-chat",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Chat Effimera - desktop shell",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "package": "electron-packager . Effimera --platform=darwin --arch=x64 --out=dist --overwrite"
+  },
+  "devDependencies": {
+    "electron": "^26.0.0",
+    "electron-packager": "^17.1.0"
+  }
+}

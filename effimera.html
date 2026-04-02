@@ -70,8 +70,11 @@
             const [readMessages, setReadMessages] = useState(new Set());
             const [firebaseError, setFirebaseError] = useState(false);
             const [firebaseErrorMsg, setFirebaseErrorMsg] = useState('');
+            const [presenceMap, setPresenceMap] = useState({});   // { userName: true/false }
+            const [otherTyping, setOtherTyping] = useState(false);
 
             const messagesEndRef = useRef(null);
+            const typingTimeoutRef = useRef(null);
 
             // Inizializzazione dalla URL + localStorage
             useEffect(() => {
@@ -114,6 +117,50 @@
 
                 return () => messagesRef.off('value');
             }, [roomId, isSetup]);
+
+            // ── Presenza online ──────────────────────────────
+            useEffect(() => {
+                if (!roomId || !isSetup || !currentUser) return;
+
+                const presenceRef = database.ref(`rooms/${roomId}/presence/${currentUser}`);
+                const connectedRef = database.ref('.info/connected');
+
+                const handler = connectedRef.on('value', (snap) => {
+                    if (snap.val() === true) {
+                        presenceRef.onDisconnect().set(false);
+                        presenceRef.set(true);
+                    }
+                });
+
+                return () => {
+                    connectedRef.off('value', handler);
+                    presenceRef.set(false);
+                };
+            }, [roomId, isSetup, currentUser]);
+
+            useEffect(() => {
+                if (!roomId || !isSetup) return;
+                const presenceRef = database.ref(`rooms/${roomId}/presence`);
+                presenceRef.on('value', (snap) => {
+                    setPresenceMap(snap.val() || {});
+                });
+                return () => presenceRef.off('value');
+            }, [roomId, isSetup]);
+
+            // ── Typing indicator ─────────────────────────────
+            useEffect(() => {
+                if (!roomId || !isSetup || !currentUser) return;
+                const typingRef = database.ref(`rooms/${roomId}/typing`);
+                typingRef.on('value', (snap) => {
+                    const data = snap.val() || {};
+                    // Show dots if ANY other user is typing
+                    const someoneElse = Object.entries(data).some(
+                        ([user, val]) => user !== currentUser && val === true
+                    );
+                    setOtherTyping(someoneElse);
+                });
+                return () => typingRef.off('value');
+            }, [roomId, isSetup, currentUser]);
 
             // Auto-scroll
             useEffect(() => {
@@ -160,6 +207,10 @@
 
             const sendMessage = async () => {
                 if (!inputText.trim()) return;
+
+                // Clear typing indicator on send
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                database.ref(`rooms/${roomId}/typing/${currentUser}`).set(false);
 
                 try {
                     const messagesRef = database.ref(`rooms/${roomId}/messages`);
@@ -215,6 +266,10 @@
             };
 
             const leaveChat = () => {
+                if (roomId && currentUser) {
+                    database.ref(`rooms/${roomId}/presence/${currentUser}`).set(false);
+                    database.ref(`rooms/${roomId}/typing/${currentUser}`).set(false);
+                }
                 if (roomId) {
                     localStorage.removeItem(`chat_${roomId}_user`);
                     localStorage.removeItem(`chat_${roomId}_creator`);
@@ -243,6 +298,17 @@
                     e.preventDefault();
                     sendMessage();
                 }
+            };
+
+            const handleInputChange = e => {
+                setInputText(e.target.value);
+                if (!roomId || !currentUser) return;
+                const typingRef = database.ref(`rooms/${roomId}/typing/${currentUser}`);
+                typingRef.set(true);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                    typingRef.set(false);
+                }, 2500);
             };
 
             if (firebaseError) {
@@ -302,6 +368,19 @@
 
                         .btn-send {padding:1rem 1.7rem;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:white;border:none;border-radius:14px;cursor:pointer;font-weight:600;min-width:110px}
                         .btn-send:disabled {opacity:.5;cursor:not-allowed}
+
+                        /* ── Presenza ── */
+                        .presence-dot {display:inline-block;width:10px;height:10px;border-radius:50%;flex-shrink:0;transition:background .4s}
+                        .presence-dot.online  {background:#22c55e;box-shadow:0 0 6px #22c55e}
+                        .presence-dot.offline {background:#ef4444}
+                        .presence-badge {display:flex;align-items:center;gap:.5rem;padding:.4rem .9rem;background:rgba(15,23,42,.5);border:1px solid rgba(99,102,241,.2);border-radius:8px;font-size:.85rem;color:#94a3b8}
+
+                        /* ── Typing dots ── */
+                        .typing-indicator {display:flex;align-items:center;gap:.4rem;padding:.5rem 1rem;background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.2);border-radius:14px;border-bottom-left-radius:4px;width:fit-content;animation:messageIn .3s ease-out}
+                        .typing-dot {width:8px;height:8px;border-radius:50%;background:#818cf8;animation:typingBounce 1.2s infinite ease-in-out}
+                        .typing-dot:nth-child(2){animation-delay:.2s}
+                        .typing-dot:nth-child(3){animation-delay:.4s}
+                        @keyframes typingBounce {0%,80%,100%{transform:translateY(0);opacity:.5}40%{transform:translateY(-7px);opacity:1}}
 
                         .setup-container,.chat-container {height:100vh;display:flex}
                         .setup-card {background:rgba(10,14,39,.92);backdrop-filter:blur(30px);border:1px solid rgba(99,102,241,.3);border-radius:24px;padding:3.2rem;max-width:520px;width:90%;margin:auto;box-shadow:0 20px 70px #00000080}
@@ -407,6 +486,18 @@
                                         <strong style={{color:'#a5b4fc'}}>{currentUser}</strong>
                                     </div>
 
+                                    {/* Presenza altri utenti */}
+                                    {Object.entries(presenceMap)
+                                        .filter(([user]) => user !== currentUser)
+                                        .map(([user, online]) => (
+                                            <div key={user} className="presence-badge">
+                                                <span className={`presence-dot ${online ? 'online' : 'offline'}`}></span>
+                                                <span>{user}</span>
+                                                <span style={{color: online ? '#22c55e' : '#ef4444', fontSize:'.8rem'}}>{online ? 'online' : 'offline'}</span>
+                                            </div>
+                                        ))
+                                    }
+
                                     <button onClick={() => setShowShareModal(true)} className="btn btn-toggle">
                                         <Icons.Link size={18} /> Link
                                     </button>
@@ -485,11 +576,21 @@
                             </div>
 
                             <div className="input-container">
+                                {/* Typing indicator */}
+                                {otherTyping && (
+                                    <div style={{marginBottom:'.7rem'}}>
+                                        <div className="typing-indicator">
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                            <div className="typing-dot"></div>
+                                        </div>
+                                    </div>
+                                )}
                                 <div className="input-actions">
                                     <textarea
                                         className="message-input"
                                         value={inputText}
-                                        onChange={e => setInputText(e.target.value)}
+                                        onChange={handleInputChange}
                                         onKeyPress={handleKeyPress}
                                         placeholder="Scrivi un messaggio..."
                                         rows={1}

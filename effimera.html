@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Effimera - Chat Privata</title>
+    <title>Effimera - Chat & Video Privata</title>
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -17,44 +17,41 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
         
-        /* Animazione per notifica chiamata */
         @keyframes pulse-call { 0% { background: #22c55e; } 50% { background: #15803d; transform: scale(1.05); } 100% { background: #22c55e; } }
-        .incoming-call-btn { animation: pulse-call 1s infinite !important; font-weight: bold !important; color: white !important; }
+        .incoming-call-btn { animation: pulse-call 1s infinite !important; font-weight: bold !important; }
 
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
         
-        /* Header come da screenshot */
-        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(10,14,39,0.8); }
         .logo-area h1 { font-size: 28px; letter-spacing: 3px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
         .logo-area p { font-size: 12px; color: #94a3b8; font-style: italic; }
 
         .actions { display: flex; gap: 12px; align-items: center; }
+        .presence-area { display: flex; gap: 8px; align-items: center; }
         .user-badge { background: #1e293b; padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
         .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
+        .dot.offline { background: #ef4444; box-shadow: none; }
 
         .btn { padding: 8px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s; color: white; }
         .btn-video { background: #22c55e; }
         .btn-clear { background: #991b1b; }
         .btn-exit { background: #9a3412; }
 
-        /* Messaggi */
         .chat-area { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 70%; }
         .msg-wrap.own { align-self: flex-end; align-items: flex-end; }
         .sender-name { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: 4px; padding: 0 10px; }
-        .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; line-height: 1.5; position: relative; }
+        .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; line-height: 1.5; font-size: 16px; }
         .own .bubble { background: #312e81; border-color: #4338ca; }
-        
         .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
 
-        /* Input Area */
-        .input-bar { padding: 25px 40px; background: rgba(10,14,39,0.8); display: flex; gap: 15px; }
+        .video-box { position: fixed; bottom: 100px; right: 40px; width: 300px; height: 400px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; display: flex; flex-direction: column; }
+        .remote-video { width: 100%; height: 100%; object-fit: cover; }
+        .local-video { position: absolute; bottom: 10px; right: 10px; width: 80px; height: 110px; background: #222; border-radius: 10px; border: 1px solid #6366f1; object-fit: cover; z-index: 1001; }
+
+        .input-bar { padding: 25px 40px; background: rgba(10,14,39,0.9); display: flex; gap: 15px; }
         .input-field { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 20px; color: white; outline: none; }
         .btn-send { background: #6366f1; width: 45px; height: 45px; border-radius: 12px; border: none; display: grid; place-items: center; color: white; cursor: pointer; }
-
-        /* Video Overlay */
-        .video-box { position: fixed; bottom: 100px; right: 40px; width: 280px; height: 380px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; }
-        .mini-video { position: absolute; bottom: 10px; right: 10px; width: 80px; height: 110px; background: #222; border-radius: 10px; border: 1px solid #444; }
     </style>
 </head>
 <body>
@@ -67,87 +64,129 @@
           apiKey: "AIzaSyAMjoh5-A0FX5ImXbyTgUWJSxJE-460dfg",
           authDomain: "effimera.firebaseapp.com",
           databaseURL: "https://effimera-default-rtdb.europe-west1.firebasedatabase.app",
-          projectId: "effimera",
-          storageBucket: "effimera.firebasestorage.app",
-          messagingSenderId: "730774854794",
-          appId: "1:730774854794:web:7c1f52fc71e3dcdaa42173"
+          projectId: "effimera"
         };
 
-        firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
 
         const App = () => {
             const [isLogin, setIsLogin] = useState(true);
             const [user, setUser] = useState('');
-            const [room, setRoom] = useState('stanza1');
+            const [room, setRoom] = useState('');
             const [messages, setMessages] = useState([]);
+            const [presence, setPresence] = useState({});
             const [input, setInput] = useState('');
             const [callActive, setCallActive] = useState(false);
-            const [incomingCall, setIncomingCall] = useState(false);
+            const [incomingCall, setIncomingCall] = useState(null);
             
             const pc = useRef(null);
             const localVideo = useRef();
             const remoteVideo = useRef();
+            const streamRef = useRef();
 
-            // Sincronizzazione Messaggi
             useEffect(() => {
-                if (isLogin) return;
-                const ref = database.ref(`rooms/${room}/messages`);
-                ref.on('value', (snap) => {
+                const params = new URLSearchParams(window.location.search);
+                const r = params.get('room') || Math.random().toString(36).substring(2, 9);
+                setRoom(r);
+                const saved = localStorage.getItem(`user_${r}`);
+                if (saved) { setUser(saved); setIsLogin(false); }
+            }, []);
+
+            useEffect(() => {
+                if (isLogin || !room) return;
+
+                // 1. Messaggi
+                const msgRef = database.ref(`rooms/${room}/messages`);
+                msgRef.on('value', snap => {
                     const data = snap.val() || {};
-                    const list = Object.entries(data).map(([id, v]) => ({ id, ...v }));
-                    setMessages(list.sort((a,b) => a.ts - b.ts));
+                    setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
                 });
 
-                // Listener per Chiamate in Entrata
-                database.ref(`rooms/${room}/call/offer`).on('value', snap => {
-                    if (snap.val() && snap.val().from !== user) setIncomingCall(true);
-                    else if (!snap.val()) setIncomingCall(false);
+                // 2. Presenza (Visualizzazione utenti connessi)
+                const presenceRef = database.ref(`rooms/${room}/presence`);
+                const userPresenceRef = database.ref(`rooms/${room}/presence/${user}`);
+                
+                database.ref(".info/connected").on("value", snap => {
+                    if (snap.val()) {
+                        userPresenceRef.onDisconnect().remove();
+                        userPresenceRef.set(true);
+                    }
                 });
 
-                return () => ref.off();
+                presenceRef.on('value', snap => setPresence(snap.val() || {}));
+
+                // 3. Segnale Video
+                const offerRef = database.ref(`rooms/${room}/video/offer`);
+                offerRef.on('value', async snap => {
+                    const offer = snap.val();
+                    if (offer && offer.from !== user) setIncomingCall(offer);
+                    else if (!offer) closeVideo();
+                });
+
+                return () => { msgRef.off(); presenceRef.off(); offerRef.off(); };
             }, [isLogin, room, user]);
+
+            const setupWebRTC = async () => {
+                pc.current = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+                streamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                if (localVideo.current) localVideo.current.srcObject = streamRef.current;
+                streamRef.current.getTracks().forEach(track => pc.current.addTrack(track, streamRef.current));
+                pc.current.ontrack = e => { if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0]; };
+                pc.current.onicecandidate = e => {
+                    if (e.candidate) database.ref(`rooms/${room}/video/candidates/${user}`).push(e.candidate.toJSON());
+                };
+            };
+
+            const startCall = async () => {
+                setCallActive(true);
+                await setupWebRTC();
+                const offer = await pc.current.createOffer();
+                await pc.current.setLocalDescription(offer);
+                await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, from: user });
+
+                database.ref(`rooms/${room}/video/answer`).on('value', async snap => {
+                    const ans = snap.val();
+                    if (ans && pc.current.signalingState === 'have-local-offer') await pc.current.setRemoteDescription(new RTCSessionDescription(ans));
+                });
+
+                database.ref(`rooms/${room}/video/candidates`).on('child_added', snap => {
+                    if (snap.key !== user) snap.ref.on('child_added', c => pc.current.addIceCandidate(new RTCIceCandidate(c.val())));
+                });
+            };
+
+            const acceptCall = async () => {
+                const offer = incomingCall;
+                setIncomingCall(null);
+                setCallActive(true);
+                await setupWebRTC();
+                await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
+                const answer = await pc.current.createAnswer();
+                await pc.current.setLocalDescription(answer);
+                await database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type });
+                database.ref(`rooms/${room}/video/candidates/${offer.from}`).on('child_added', snap => pc.current.addIceCandidate(new RTCIceCandidate(snap.val())));
+            };
+
+            const endCall = () => { database.ref(`rooms/${room}/video`).remove(); closeVideo(); };
+            const closeVideo = () => {
+                if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+                if (pc.current) pc.current.close();
+                setCallActive(false);
+                setIncomingCall(null);
+            };
 
             const sendMessage = () => {
                 if (!input.trim()) return;
-                database.ref(`rooms/${room}/messages`).push({
-                    text: input,
-                    sender: user,
-                    ts: Date.now()
-                });
+                database.ref(`rooms/${room}/messages`).push({ text: input, sender: user, ts: Date.now() });
                 setInput('');
-            };
-
-            const destroyMessage = (id) => {
-                setTimeout(() => {
-                    database.ref(`rooms/${room}/messages/${id}`).remove();
-                }, 2000);
-            };
-
-            const handleLogin = () => { if (user.trim()) setIsLogin(false); };
-
-            // Logica Video Semplificata (Signaling)
-            const startVideo = async () => {
-                setCallActive(true);
-                database.ref(`rooms/${room}/call/offer`).set({ from: user, type: 'init' });
-            };
-
-            const acceptVideo = () => {
-                setIncomingCall(false);
-                setCallActive(true);
-            };
-
-            const endVideo = () => {
-                database.ref(`rooms/${room}/call`).remove();
-                setCallActive(false);
             };
 
             if (isLogin) return (
                 <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
-                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, border:'1px solid #334155'}}>
-                        <h1 style={{color:'#6366f1', marginBottom:20}}>EFFIMERA</h1>
-                        <input className="input-field" placeholder="Il tuo nome..." onChange={e=>setUser(e.target.value)} style={{marginBottom:20, display:'block', width:'100%'}} />
-                        <button className="btn btn-video" onClick={handleLogin} style={{width:'100%', justifyContent:'center'}}>ENTRA NELLA CHAT</button>
+                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, border:'1px solid #334155', width:400}}>
+                        <h1 style={{color:'#6366f1', marginBottom:10}}>EFFIMERA</h1>
+                        <input className="input-field" placeholder="Tuo Nome" value={user} onChange={e=>setUser(e.target.value)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
+                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center'}} onClick={() => { localStorage.setItem(`user_${room}`, user); window.history.pushState({},'',`?room=${room}`); setIsLogin(false); }}>ENTRA</button>
                     </div>
                 </div>
             );
@@ -155,41 +194,27 @@
             return (
                 <div className="app-container">
                     <header className="header">
-                        <div className="logo-area">
-                            <h1>EFFIMERA</h1>
-                            <p>Messaggi che svaniscono nel nulla</p>
-                        </div>
+                        <div className="logo-area"><h1>EFFIMERA</h1><p>Messaggi che svaniscono</p></div>
                         <div className="actions">
-                            <div className="user-badge"><div className="dot"></div> Tu: {user}</div>
-                            
-                            {incomingCall ? (
-                                <button className="btn incoming-call-btn" onClick={acceptVideo}>ACCETTA CHIAMATA</button>
-                            ) : (
-                                <button className="btn btn-video" onClick={startVideo}>Video</button>
-                            )}
-                            
-                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota Chat</button>
-                            <button className="btn btn-exit" onClick={() => window.location.reload()}>Esci</button>
+                            <div className="presence-area">
+                                <div className="user-badge"><div className="dot"></div> Tu ({user})</div>
+                                {Object.keys(presence).filter(u => u !== user).map(u => (
+                                    <div key={u} className="user-badge"><div className="dot"></div> {u}</div>
+                                ))}
+                            </div>
+                            {incomingCall ? <button className="btn incoming-call-btn" onClick={acceptCall}>ACCETTA CHIAMATA</button> : <button className="btn btn-video" onClick={startCall} disabled={callActive}>Video</button>}
+                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota</button>
+                            <button className="btn btn-exit" onClick={() => { localStorage.removeItem(`user_${room}`); window.location.href='/'; }}>Esci</button>
                         </div>
                     </header>
 
                     <main className="chat-area">
-                        {messages.length === 0 && <p style={{textAlign:'center', opacity:0.3, marginTop:100}}>Nessun messaggio. La privacy è garantita.</p>}
                         {messages.map(m => (
                             <div key={m.id} className={`msg-wrap ${m.sender === user ? 'own' : ''}`}>
                                 <span className="sender-name">{m.sender === user ? 'ME' : m.sender}</span>
                                 <div className="bubble">
-                                    {m.sender !== user ? (
-                                        <div style={{filter: 'blur(4px)'}} id={`text-${m.id}`}>{m.text}</div>
-                                    ) : m.text}
-                                    
-                                    {m.sender !== user && (
-                                        <button className="btn-read" onClick={(e) => {
-                                            document.getElementById(`text-${m.id}`).style.filter = 'none';
-                                            e.target.style.display = 'none';
-                                            destroyMessage(m.id);
-                                        }}>Leggi e distruggi</button>
-                                    )}
+                                    <div id={`txt-${m.id}`} style={{filter: m.sender !== user ? 'blur(5px)' : 'none'}}>{m.text}</div>
+                                    {m.sender !== user && <button className="btn-read" onClick={(e) => { document.getElementById(`txt-${m.id}`).style.filter = 'none'; e.target.remove(); setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 2500); }}>Leggi</button>}
                                 </div>
                             </div>
                         ))}
@@ -197,23 +222,15 @@
 
                     {callActive && (
                         <div className="video-box">
-                            <div style={{color:'white', padding:10, fontSize:12, textAlign:'center'}}>Videochiamata attiva...</div>
-                            <video className="mini-video" autoPlay muted />
-                            <button onClick={endVideo} style={{position:'absolute', bottom:10, left:10, background:'red', border:'none', color:'white', padding:'5px 10px', borderRadius:5}}>Chiudi</button>
+                            <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
+                            <video ref={localVideo} className="local-video" autoPlay muted playsInline />
+                            <button onClick={endCall} style={{position:'absolute', top:10, right:10, background:'red', border:'none', color:'white', width:30, height:30, borderRadius:'50%', cursor:'pointer'}}>X</button>
                         </div>
                     )}
 
                     <footer className="input-bar">
-                        <input 
-                            className="input-field" 
-                            value={input} 
-                            onChange={e=>setInput(e.target.value)} 
-                            onKeyPress={e => e.key === 'Enter' && sendMessage()}
-                            placeholder="Invia un messaggio criptato..." 
-                        />
-                        <button className="btn-send" onClick={sendMessage}>
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg>
-                        </button>
+                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Messaggio..." />
+                        <button className="btn-send" onClick={sendMessage}>➔</button>
                     </footer>
                 </div>
             );

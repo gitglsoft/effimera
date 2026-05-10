@@ -17,52 +17,56 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
         
-        @keyframes pulse-call { 0% { background: #22c55e; } 50% { background: #15803d; transform: scale(1.05); } 100% { background: #22c55e; } }
-        .incoming-call-btn { animation: pulse-call 1s infinite !important; font-weight: bold !important; }
+        /* Animazione visiva per la chiamata in arrivo (Senza Suono) */
+        @keyframes pulse-green { 
+            0% { background: #22c55e; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { background: #16a34a; box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
+            100% { background: #22c55e; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        .incoming-call-btn { animation: pulse-green 1.5s infinite !important; font-weight: 800 !important; border: 2px solid white !important; }
 
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
         
-        /* HEADER */
-        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(10,14,39,0.8); }
-        .logo-area h1 { font-size: 28px; letter-spacing: 3px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; margin-bottom: 5px; }
+        /* Header */
+        .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(10,14,39,0.8); z-index: 10; }
+        .logo-area h1 { font-size: 28px; letter-spacing: 3px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
         .logo-area p { font-size: 12px; color: #94a3b8; font-style: italic; }
 
-        /* PRESENZA E BOTTONI */
         .actions { display: flex; gap: 12px; align-items: center; }
         .presence-list { display: flex; gap: 8px; align-items: center; margin-right: 15px; }
-        .user-badge { background: #1e293b; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
+        .user-badge { background: #1e293b; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
         .dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
 
-        /* HOVER FIX: transizione più evidente e cursore forzato */
-        .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer !important; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.3s ease; color: white; font-family: 'Crimson Pro', serif; font-size: 16px; }
-        .btn:hover { transform: translateY(-3px); filter: brightness(1.3); box-shadow: 0 5px 15px rgba(0,0,0,0.4); }
+        /* Pulsanti con Hover Reattivo */
+        .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer !important; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease-in-out; color: white; font-family: 'Crimson Pro', serif; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
         .btn:active { transform: translateY(0); }
-
+        
         .btn-video { background: #22c55e; }
         .btn-clear { background: #991b1b; }
         .btn-exit { background: #9a3412; }
 
-        /* CHAT */
+        /* Chat */
         .chat-area { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 70%; }
         .msg-wrap.own { align-self: flex-end; align-items: flex-end; }
         .sender-name { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: 4px; padding: 0 10px; }
-        .bubble { padding: 14px 20px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; line-height: 1.5; font-size: 18px; }
+        .bubble { padding: 14px 20px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; font-size: 18px; line-height: 1.4; }
         .own .bubble { background: #312e81; border-color: #4338ca; }
         
         .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: 0.3s; font-weight: bold; }
         .btn-read:hover { background: #22c55e; color: white; }
 
-        /* VIDEO UI - Modificato per essere sempre nel DOM ma nascosto */
-        .video-box { position: fixed; bottom: 100px; right: 40px; width: 320px; height: 420px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.5); flex-direction: column; }
-        .remote-video { width: 100%; height: 100%; object-fit: cover; background: #111; }
-        .local-video { position: absolute; bottom: 15px; right: 15px; width: 90px; height: 120px; background: #222; border-radius: 10px; border: 2px solid #6366f1; object-fit: cover; z-index: 1001; }
+        /* Video */
+        .video-box { position: fixed; bottom: 100px; right: 40px; width: 320px; height: 420px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        .remote-video { width: 100%; height: 100%; object-fit: cover; }
+        .local-video { position: absolute; bottom: 15px; right: 15px; width: 90px; height: 120px; border-radius: 10px; border: 2px solid #6366f1; object-fit: cover; z-index: 1001; background: #222; }
 
-        /* INPUT */
+        /* Input Bar */
         .input-bar { padding: 25px 40px; background: rgba(10,14,39,0.9); display: flex; gap: 15px; }
-        .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px 20px; color: white; outline: none; transition: 0.3s; font-size: 16px; }
-        .input-field:focus { border-color: #6366f1; background: #242f44; }
-        .btn-send { background: #6366f1; width: 55px; height: 55px; border-radius: 12px; border: none; display: grid; place-items: center; color: white; cursor: pointer; transition: 0.3s; font-size: 20px; }
+        .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px 20px; color: white; outline: none; font-size: 16px; transition: 0.3s; }
+        .input-field:focus { border-color: #6366f1; }
+        .btn-send { background: #6366f1; width: 55px; height: 55px; border-radius: 12px; border: none; color: white; cursor: pointer; font-size: 20px; transition: 0.2s; }
         .btn-send:hover { background: #4f46e5; transform: scale(1.05); }
     </style>
 </head>
@@ -108,104 +112,78 @@
             useEffect(() => {
                 if (isLogin || !room) return;
 
-                const msgRef = database.ref(`rooms/${room}/messages`);
-                msgRef.on('value', snap => {
+                // Listener Messaggi
+                database.ref(`rooms/${room}/messages`).on('value', snap => {
                     const data = snap.val() || {};
                     setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
                 });
 
-                // Gestione Presenza
-                const pRef = database.ref(`rooms/${room}/presence`);
+                // Listener Presenza Online
                 const myPRef = database.ref(`rooms/${room}/presence/${user}`);
                 database.ref(".info/connected").on("value", s => {
                     if (s.val()) { myPRef.onDisconnect().remove(); myPRef.set(true); }
                 });
-                pRef.on('value', s => setPresence(s.val() || {}));
+                database.ref(`rooms/${room}/presence`).on('value', s => setPresence(s.val() || {}));
 
-                // Gestione Chiamate in Entrata
-                const offerRef = database.ref(`rooms/${room}/video/offer`);
-                offerRef.on('value', snap => {
+                // Listener Chiamate Video
+                database.ref(`rooms/${room}/video/offer`).on('value', snap => {
                     const offer = snap.val();
                     if (offer && offer.from !== user) setIncomingCall(offer);
                     else if (!offer) closeVideoLogic();
                 });
 
-                return () => { msgRef.off(); pRef.off(); offerRef.off(); };
+                return () => { database.ref(`rooms/${room}`).off(); };
             }, [isLogin, room, user]);
 
-            // LA FIX DEL VIDEO: I refs ora sono sempre attaccati al DOM
+            const handleLoginAction = () => {
+                if(!user.trim()) return;
+                localStorage.setItem(`user_${room}`, user);
+                window.history.pushState({},'',`?room=${room}`);
+                setIsLogin(false);
+            };
+
             const setupWebRTC = async () => {
                 try {
                     pc.current = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
                     streamRef.current = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-                    
-                    if (localVideo.current) {
-                        localVideo.current.srcObject = streamRef.current;
-                    }
-                    
+                    if (localVideo.current) localVideo.current.srcObject = streamRef.current;
                     streamRef.current.getTracks().forEach(track => pc.current.addTrack(track, streamRef.current));
-                    
-                    pc.current.ontrack = e => { 
-                        if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0]; 
-                    };
-                    
+                    pc.current.ontrack = e => { if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0]; };
                     pc.current.onicecandidate = e => {
                         if (e.candidate) database.ref(`rooms/${room}/video/candidates/${user}`).push(e.candidate.toJSON());
                     };
-                } catch (error) {
-                    console.error("Errore accesso webcam:", error);
-                    alert("Impossibile accedere alla webcam o al microfono.");
-                    setCallActive(false);
-                }
+                } catch (e) { alert("Accesso camera negato."); setCallActive(false); }
             };
 
             const startCall = async () => {
                 setCallActive(true);
                 await setupWebRTC();
-                if(!pc.current) return;
-
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
                 await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, from: user });
-                
                 database.ref(`rooms/${room}/video/answer`).on('value', async s => {
                     const ans = s.val();
                     if (ans && pc.current.signalingState === 'have-local-offer') await pc.current.setRemoteDescription(new RTCSessionDescription(ans));
                 });
-                
                 database.ref(`rooms/${room}/video/candidates`).on('child_added', s => {
                     if (s.key !== user) s.ref.on('child_added', c => pc.current.addIceCandidate(new RTCIceCandidate(c.val())));
                 });
             };
 
             const acceptCall = async () => {
-                const offer = incomingCall; 
-                setIncomingCall(null); 
-                setCallActive(true);
-                
+                const offer = incomingCall; setIncomingCall(null); setCallActive(true);
                 await setupWebRTC();
-                if(!pc.current) return;
-
                 await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
                 const answer = await pc.current.createAnswer();
                 await pc.current.setLocalDescription(answer);
                 await database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type });
-                
                 database.ref(`rooms/${room}/video/candidates/${offer.from}`).on('child_added', s => pc.current.addIceCandidate(new RTCIceCandidate(s.val())));
             };
 
-            const endCall = () => { 
-                database.ref(`rooms/${room}/video`).remove(); 
-                closeVideoLogic(); 
-            };
-            
             const closeVideoLogic = () => {
                 if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
                 if (pc.current) { pc.current.close(); pc.current = null; }
-                if (localVideo.current) localVideo.current.srcObject = null;
-                if (remoteVideo.current) remoteVideo.current.srcObject = null;
-                setCallActive(false); 
-                setIncomingCall(null);
+                setCallActive(false); setIncomingCall(null);
             };
 
             const sendMessage = () => {
@@ -214,21 +192,20 @@
                 setInput('');
             };
 
-            // LA FIX DEL LOGOUT (Errore 404)
-            const handleLogout = () => {
-                localStorage.removeItem(`user_${room}`);
-                database.ref(`rooms/${room}/presence/${user}`).remove();
-                // Questo pulisce l'URL senza far arrabbiare GitHub Pages
-                window.location.replace(window.location.pathname);
-            };
-
             if (isLogin) return (
                 <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
-                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, border:'1px solid #334155', width:400, boxShadow:'0 20px 40px rgba(0,0,0,0.5)'}}>
-                        <h1 style={{color:'#6366f1', marginBottom:5, letterSpacing:2}}>EFFIMERA</h1>
-                        <p style={{color:'#94a3b8', marginBottom:30, fontSize:14}}>Stanza: {room}</p>
-                        <input className="input-field" placeholder="Inserisci il tuo nome..." value={user} onChange={e=>setUser(e.target.value)} style={{width:'100%', marginBottom:25, textAlign:'center'}} />
-                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15, fontSize:18}} onClick={() => { if(!user.trim()) return; localStorage.setItem(`user_${room}`, user); window.history.pushState({},'',`?room=${room}`); setIsLogin(false); }}>ENTRA NELLA STANZA</button>
+                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, border:'1px solid #334155', width:400, boxShadow:'0 20px 40px rgba(0,0,0,0.4)'}}>
+                        <h1 style={{color:'#6366f1', marginBottom:10, letterSpacing:2}}>EFFIMERA</h1>
+                        <p style={{color:'#94a3b8', marginBottom:30}}>Entra nella Stanza: {room}</p>
+                        <input 
+                            className="input-field" 
+                            placeholder="Inserisci il tuo nome" 
+                            value={user} 
+                            onChange={e=>setUser(e.target.value)} 
+                            onKeyPress={e => e.key === 'Enter' && handleLoginAction()}
+                            style={{width:'100%', marginBottom:25, textAlign:'center'}} 
+                        />
+                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15, fontSize:18}} onClick={handleLoginAction}>ENTRA</button>
                     </div>
                 </div>
             );
@@ -236,50 +213,50 @@
             return (
                 <div className="app-container">
                     <header className="header">
-                        <div className="logo-area">
-                            <h1>EFFIMERA</h1>
-                            <p>Stanza: {room}</p>
-                        </div>
+                        <div className="logo-area"><h1>EFFIMERA</h1><p>Privacy Totale</p></div>
                         <div className="actions">
                             <div className="presence-list">
                                 <div className="user-badge"><div className="dot"></div> Tu ({user})</div>
                                 {Object.keys(presence).filter(u => u !== user).map(u => (
-                                    <div key={u} className="user-badge"><div className="dot" style={{background:'#eab308', boxShadow:'0 0 8px #eab308'}}></div> {u}</div>
+                                    <div key={u} className="user-badge"><div className="dot" style={{background:'#eab308'}}></div> {u}</div>
                                 ))}
                             </div>
                             
-                            {incomingCall ? 
-                                <button className="btn incoming-call-btn" onClick={acceptCall}>ACCETTA VIDEO</button> : 
-                                <button className="btn btn-video" onClick={startCall} disabled={callActive}>Video</button>
-                            }
+                            {incomingCall ? (
+                                <button className="btn incoming-call-btn" onClick={acceptCall}>
+                                    📞 CHIAMATA DA {incomingCall.from.toUpperCase()}
+                                </button>
+                            ) : (
+                                <button className="btn btn-video" onClick={startCall} disabled={callActive}>
+                                    {callActive ? "In Video..." : "Videochiamata"}
+                                </button>
+                            )}
                             
-                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota Chat</button>
-                            <button className="btn btn-exit" onClick={handleLogout}>Esci</button>
+                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota</button>
+                            <button className="btn btn-exit" onClick={() => { localStorage.removeItem(`user_${room}`); window.location.replace(window.location.pathname); }}>Esci</button>
                         </div>
                     </header>
 
                     <main className="chat-area">
-                        {messages.length === 0 && <p style={{textAlign:'center', opacity:0.3, marginTop:100, fontSize: 20}}>Nessun messaggio. La chat è cifrata e vuota.</p>}
                         {messages.map(m => (
                             <div key={m.id} className={`msg-wrap ${m.sender === user ? 'own' : ''}`}>
-                                <span className="sender-name">{m.sender === user ? 'ME' : m.sender}</span>
+                                <span className="sender-name">{m.sender}</span>
                                 <div className="bubble">
-                                    <div id={`txt-${m.id}`} style={{filter: m.sender !== user ? 'blur(6px)' : 'none', transition: 'filter 0.3s'}}>{m.text}</div>
+                                    <div id={`txt-${m.id}`} style={{filter: m.sender !== user ? 'blur(6px)' : 'none', transition: '0.3s'}}>{m.text}</div>
                                     {m.sender !== user && <button className="btn-read" onClick={(e) => { document.getElementById(`txt-${m.id}`).style.filter = 'none'; e.target.remove(); setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 3500); }}>Leggi (3s)</button>}
                                 </div>
                             </div>
                         ))}
                     </main>
 
-                    {/* Il box video è sempre nel DOM ma viene mostrato solo se callActive è true */}
-                    <div className="video-box" style={{ display: callActive ? 'flex' : 'none' }}>
+                    <div className="video-box" style={{ display: callActive ? 'block' : 'none' }}>
                         <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
                         <video ref={localVideo} className="local-video" autoPlay muted playsInline />
-                        <button onClick={endCall} style={{position:'absolute', top:15, right:15, background:'#991b1b', border:'none', color:'white', width:35, height:35, borderRadius:'50%', cursor:'pointer', fontWeight:'bold', fontSize:16, transition:'0.2s', zIndex:1005}} onMouseOver={e=>e.target.style.transform='scale(1.1)'} onMouseOut={e=>e.target.style.transform='scale(1)'}>X</button>
+                        <button onClick={() => database.ref(`rooms/${room}/video`).remove()} style={{position:'absolute', top:15, right:15, background:'rgba(255,0,0,0.7)', border:'none', color:'white', width:35, height:35, borderRadius:'50%', cursor:'pointer', fontWeight:'bold'}}>X</button>
                     </div>
 
                     <footer className="input-bar">
-                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Scrivi il tuo messaggio segreto..." />
+                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Scrivi un messaggio..." />
                         <button className="btn-send" onClick={sendMessage}>➔</button>
                     </footer>
                 </div>

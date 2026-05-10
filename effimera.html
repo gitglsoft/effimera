@@ -22,36 +22,47 @@
 
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
         
+        /* HEADER */
         .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(10,14,39,0.8); }
         .logo-area h1 { font-size: 28px; letter-spacing: 3px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
         .logo-area p { font-size: 12px; color: #94a3b8; font-style: italic; }
 
+        /* PRESENZA E BOTTONI */
         .actions { display: flex; gap: 12px; align-items: center; }
-        .presence-area { display: flex; gap: 8px; align-items: center; }
-        .user-badge { background: #1e293b; padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
+        .presence-list { display: flex; gap: 8px; align-items: center; }
+        .user-badge { background: #1e293b; padding: 6px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
         .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
-        .dot.offline { background: #ef4444; box-shadow: none; }
 
-        .btn { padding: 8px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.3s; color: white; }
+        .btn { padding: 8px 18px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: 0.2s ease-in-out; color: white; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+        .btn:active { transform: translateY(0); }
+
         .btn-video { background: #22c55e; }
         .btn-clear { background: #991b1b; }
         .btn-exit { background: #9a3412; }
 
+        /* CHAT */
         .chat-area { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 70%; }
         .msg-wrap.own { align-self: flex-end; align-items: flex-end; }
         .sender-name { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: 4px; padding: 0 10px; }
         .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; line-height: 1.5; font-size: 16px; }
         .own .bubble { background: #312e81; border-color: #4338ca; }
-        .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
+        
+        .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 4px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; transition: 0.2s; }
+        .btn-read:hover { background: #22c55e; color: white; }
 
-        .video-box { position: fixed; bottom: 100px; right: 40px; width: 300px; height: 400px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; display: flex; flex-direction: column; }
+        /* VIDEO UI */
+        .video-box { position: fixed; bottom: 100px; right: 40px; width: 300px; height: 400px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .remote-video { width: 100%; height: 100%; object-fit: cover; }
         .local-video { position: absolute; bottom: 10px; right: 10px; width: 80px; height: 110px; background: #222; border-radius: 10px; border: 1px solid #6366f1; object-fit: cover; z-index: 1001; }
 
+        /* INPUT */
         .input-bar { padding: 25px 40px; background: rgba(10,14,39,0.9); display: flex; gap: 15px; }
-        .input-field { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 20px; color: white; outline: none; }
-        .btn-send { background: #6366f1; width: 45px; height: 45px; border-radius: 12px; border: none; display: grid; place-items: center; color: white; cursor: pointer; }
+        .input-field { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 12px 20px; color: white; outline: none; transition: 0.3s; }
+        .input-field:focus { border-color: #6366f1; background: #242f44; }
+        .btn-send { background: #6366f1; width: 45px; height: 45px; border-radius: 12px; border: none; display: grid; place-items: center; color: white; cursor: pointer; transition: 0.2s; }
+        .btn-send:hover { background: #4f46e5; transform: scale(1.1); }
     </style>
 </head>
 <body>
@@ -96,27 +107,20 @@
             useEffect(() => {
                 if (isLogin || !room) return;
 
-                // 1. Messaggi
                 const msgRef = database.ref(`rooms/${room}/messages`);
                 msgRef.on('value', snap => {
                     const data = snap.val() || {};
                     setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
                 });
 
-                // 2. Presenza (Visualizzazione utenti connessi)
-                const presenceRef = database.ref(`rooms/${room}/presence`);
-                const userPresenceRef = database.ref(`rooms/${room}/presence/${user}`);
-                
-                database.ref(".info/connected").on("value", snap => {
-                    if (snap.val()) {
-                        userPresenceRef.onDisconnect().remove();
-                        userPresenceRef.set(true);
-                    }
+                // Gestione Presenza (Online/Offline)
+                const pRef = database.ref(`rooms/${room}/presence`);
+                const myPRef = database.ref(`rooms/${room}/presence/${user}`);
+                database.ref(".info/connected").on("value", s => {
+                    if (s.val()) { myPRef.onDisconnect().remove(); myPRef.set(true); }
                 });
+                pRef.on('value', s => setPresence(s.val() || {}));
 
-                presenceRef.on('value', snap => setPresence(snap.val() || {}));
-
-                // 3. Segnale Video
                 const offerRef = database.ref(`rooms/${room}/video/offer`);
                 offerRef.on('value', async snap => {
                     const offer = snap.val();
@@ -124,7 +128,7 @@
                     else if (!offer) closeVideo();
                 });
 
-                return () => { msgRef.off(); presenceRef.off(); offerRef.off(); };
+                return () => { msgRef.off(); pRef.off(); offerRef.off(); };
             }, [isLogin, room, user]);
 
             const setupWebRTC = async () => {
@@ -144,35 +148,30 @@
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
                 await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, from: user });
-
-                database.ref(`rooms/${room}/video/answer`).on('value', async snap => {
-                    const ans = snap.val();
+                database.ref(`rooms/${room}/video/answer`).on('value', async s => {
+                    const ans = s.val();
                     if (ans && pc.current.signalingState === 'have-local-offer') await pc.current.setRemoteDescription(new RTCSessionDescription(ans));
                 });
-
-                database.ref(`rooms/${room}/video/candidates`).on('child_added', snap => {
-                    if (snap.key !== user) snap.ref.on('child_added', c => pc.current.addIceCandidate(new RTCIceCandidate(c.val())));
+                database.ref(`rooms/${room}/video/candidates`).on('child_added', s => {
+                    if (s.key !== user) s.ref.on('child_added', c => pc.current.addIceCandidate(new RTCIceCandidate(c.val())));
                 });
             };
 
             const acceptCall = async () => {
-                const offer = incomingCall;
-                setIncomingCall(null);
-                setCallActive(true);
+                const offer = incomingCall; setIncomingCall(null); setCallActive(true);
                 await setupWebRTC();
                 await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
                 const answer = await pc.current.createAnswer();
                 await pc.current.setLocalDescription(answer);
                 await database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type });
-                database.ref(`rooms/${room}/video/candidates/${offer.from}`).on('child_added', snap => pc.current.addIceCandidate(new RTCIceCandidate(snap.val())));
+                database.ref(`rooms/${room}/video/candidates/${offer.from}`).on('child_added', s => pc.current.addIceCandidate(new RTCIceCandidate(s.val())));
             };
 
             const endCall = () => { database.ref(`rooms/${room}/video`).remove(); closeVideo(); };
             const closeVideo = () => {
                 if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
                 if (pc.current) pc.current.close();
-                setCallActive(false);
-                setIncomingCall(null);
+                setCallActive(false); setIncomingCall(null);
             };
 
             const sendMessage = () => {
@@ -181,12 +180,19 @@
                 setInput('');
             };
 
+            const handleLogout = () => {
+                localStorage.removeItem(`user_${room}`);
+                // Correzione Errore 404: ricarica la pagina corrente senza parametri per tornare al login
+                window.location.href = window.location.pathname; 
+            };
+
             if (isLogin) return (
                 <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
                     <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, border:'1px solid #334155', width:400}}>
-                        <h1 style={{color:'#6366f1', marginBottom:10}}>EFFIMERA</h1>
-                        <input className="input-field" placeholder="Tuo Nome" value={user} onChange={e=>setUser(e.target.value)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
-                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center'}} onClick={() => { localStorage.setItem(`user_${room}`, user); window.history.pushState({},'',`?room=${room}`); setIsLogin(false); }}>ENTRA</button>
+                        <h1 style={{color:'#6366f1', marginBottom:10, letterSpacing:2}}>EFFIMERA</h1>
+                        <p style={{color:'#94a3b8', marginBottom:30, fontSize:14}}>Stanza: {room}</p>
+                        <input className="input-field" placeholder="Inserisci il tuo nome..." value={user} onChange={e=>setUser(e.target.value)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
+                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={() => { if(!user.trim()) return; localStorage.setItem(`user_${room}`, user); window.history.pushState({},'',`?room=${room}`); setIsLogin(false); }}>ENTRA</button>
                     </div>
                 </div>
             );
@@ -194,27 +200,31 @@
             return (
                 <div className="app-container">
                     <header className="header">
-                        <div className="logo-area"><h1>EFFIMERA</h1><p>Messaggi che svaniscono</p></div>
+                        <div className="logo-area"><h1>EFFIMERA</h1><p>Messaggi che svaniscono nel nulla</p></div>
                         <div className="actions">
-                            <div className="presence-area">
+                            <div className="presence-list">
                                 <div className="user-badge"><div className="dot"></div> Tu ({user})</div>
                                 {Object.keys(presence).filter(u => u !== user).map(u => (
                                     <div key={u} className="user-badge"><div className="dot"></div> {u}</div>
                                 ))}
                             </div>
-                            {incomingCall ? <button className="btn incoming-call-btn" onClick={acceptCall}>ACCETTA CHIAMATA</button> : <button className="btn btn-video" onClick={startCall} disabled={callActive}>Video</button>}
-                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota</button>
-                            <button className="btn btn-exit" onClick={() => { localStorage.removeItem(`user_${room}`); window.location.href='/'; }}>Esci</button>
+                            {incomingCall ? 
+                                <button className="btn incoming-call-btn" onClick={acceptCall}>ACCETTA VIDEO</button> : 
+                                <button className="btn btn-video" onClick={startCall} disabled={callActive}>Video</button>
+                            }
+                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota Chat</button>
+                            <button className="btn btn-exit" onClick={handleLogout}>Esci</button>
                         </div>
                     </header>
 
                     <main className="chat-area">
+                        {messages.length === 0 && <p style={{textAlign:'center', opacity:0.3, marginTop:100}}>Nessun messaggio. La privacy è garantita.</p>}
                         {messages.map(m => (
                             <div key={m.id} className={`msg-wrap ${m.sender === user ? 'own' : ''}`}>
                                 <span className="sender-name">{m.sender === user ? 'ME' : m.sender}</span>
                                 <div className="bubble">
                                     <div id={`txt-${m.id}`} style={{filter: m.sender !== user ? 'blur(5px)' : 'none'}}>{m.text}</div>
-                                    {m.sender !== user && <button className="btn-read" onClick={(e) => { document.getElementById(`txt-${m.id}`).style.filter = 'none'; e.target.remove(); setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 2500); }}>Leggi</button>}
+                                    {m.sender !== user && <button className="btn-read" onClick={(e) => { document.getElementById(`txt-${m.id}`).style.filter = 'none'; e.target.remove(); setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 2500); }}>Leggi e distruggi</button>}
                                 </div>
                             </div>
                         ))}
@@ -224,12 +234,12 @@
                         <div className="video-box">
                             <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
                             <video ref={localVideo} className="local-video" autoPlay muted playsInline />
-                            <button onClick={endCall} style={{position:'absolute', top:10, right:10, background:'red', border:'none', color:'white', width:30, height:30, borderRadius:'50%', cursor:'pointer'}}>X</button>
+                            <button onClick={endCall} style={{position:'absolute', top:10, right:10, background:'#991b1b', border:'none', color:'white', width:30, height:30, borderRadius:'50%', cursor:'pointer'}}>X</button>
                         </div>
                     )}
 
                     <footer className="input-bar">
-                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Messaggio..." />
+                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Invia un messaggio criptato..." />
                         <button className="btn-send" onClick={sendMessage}>➔</button>
                     </footer>
                 </div>

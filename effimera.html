@@ -17,7 +17,7 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
         
-        /* Animazione visiva per la chiamata in arrivo (Senza Suono) */
+        /* Animazione Chiamata */
         @keyframes pulse-green { 
             0% { background: #22c55e; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
             70% { background: #16a34a; box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
@@ -27,21 +27,22 @@
 
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
         
-        /* Header */
+        /* Header stile Screenshot */
         .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(10,14,39,0.8); z-index: 10; }
+        .logo-area { display: flex; align-items: center; gap: 15px; }
+        .logo-icon { width: 40px; height: 40px; background: #312e81; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; justify-content: center; align-items: center; border: 2px solid #6366f1; }
         .logo-area h1 { font-size: 28px; letter-spacing: 3px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
         .logo-area p { font-size: 12px; color: #94a3b8; font-style: italic; }
 
-        .actions { display: flex; gap: 12px; align-items: center; }
-        .presence-list { display: flex; gap: 8px; align-items: center; margin-right: 15px; }
-        .user-badge { background: #1e293b; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; transition: 0.3s; }
+        .actions { display: flex; gap: 10px; align-items: center; }
+        .user-badge { background: #1e293b; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
         .dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
 
-        /* Pulsanti con Hover Reattivo */
-        .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer !important; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s ease-in-out; color: white; font-family: 'Crimson Pro', serif; }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        .btn:active { transform: translateY(0); }
+        /* Pulsanti */
+        .btn { padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer !important; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; color: white; font-family: 'Crimson Pro', serif; }
+        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
         
+        .btn-invite { background: #4f46e5; border: 1px solid rgba(255,255,255,0.1); }
         .btn-video { background: #22c55e; }
         .btn-clear { background: #991b1b; }
         .btn-exit { background: #9a3412; }
@@ -54,20 +55,17 @@
         .bubble { padding: 14px 20px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; font-size: 18px; line-height: 1.4; }
         .own .bubble { background: #312e81; border-color: #4338ca; }
         
-        .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; transition: 0.3s; font-weight: bold; }
-        .btn-read:hover { background: #22c55e; color: white; }
+        .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
 
-        /* Video */
+        /* Video Box */
         .video-box { position: fixed; bottom: 100px; right: 40px; width: 320px; height: 420px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .remote-video { width: 100%; height: 100%; object-fit: cover; }
         .local-video { position: absolute; bottom: 15px; right: 15px; width: 90px; height: 120px; border-radius: 10px; border: 2px solid #6366f1; object-fit: cover; z-index: 1001; background: #222; }
 
-        /* Input Bar */
+        /* Input */
         .input-bar { padding: 25px 40px; background: rgba(10,14,39,0.9); display: flex; gap: 15px; }
-        .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px 20px; color: white; outline: none; font-size: 16px; transition: 0.3s; }
-        .input-field:focus { border-color: #6366f1; }
-        .btn-send { background: #6366f1; width: 55px; height: 55px; border-radius: 12px; border: none; color: white; cursor: pointer; font-size: 20px; transition: 0.2s; }
-        .btn-send:hover { background: #4f46e5; transform: scale(1.05); }
+        .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px 20px; color: white; outline: none; font-size: 16px; }
+        .btn-send { background: #6366f1; width: 55px; height: 55px; border-radius: 12px; border: none; color: white; cursor: pointer; font-size: 20px; }
     </style>
 </head>
 <body>
@@ -95,6 +93,7 @@
             const [input, setInput] = useState('');
             const [callActive, setCallActive] = useState(false);
             const [incomingCall, setIncomingCall] = useState(null);
+            const [copied, setCopied] = useState(false);
             
             const pc = useRef(null);
             const localVideo = useRef(null);
@@ -112,20 +111,17 @@
             useEffect(() => {
                 if (isLogin || !room) return;
 
-                // Listener Messaggi
                 database.ref(`rooms/${room}/messages`).on('value', snap => {
                     const data = snap.val() || {};
                     setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
                 });
 
-                // Listener Presenza Online
                 const myPRef = database.ref(`rooms/${room}/presence/${user}`);
                 database.ref(".info/connected").on("value", s => {
                     if (s.val()) { myPRef.onDisconnect().remove(); myPRef.set(true); }
                 });
                 database.ref(`rooms/${room}/presence`).on('value', s => setPresence(s.val() || {}));
 
-                // Listener Chiamate Video
                 database.ref(`rooms/${room}/video/offer`).on('value', snap => {
                     const offer = snap.val();
                     if (offer && offer.from !== user) setIncomingCall(offer);
@@ -135,11 +131,17 @@
                 return () => { database.ref(`rooms/${room}`).off(); };
             }, [isLogin, room, user]);
 
-            const handleLoginAction = () => {
+            const handleLogin = () => {
                 if(!user.trim()) return;
                 localStorage.setItem(`user_${room}`, user);
                 window.history.pushState({},'',`?room=${room}`);
                 setIsLogin(false);
+            };
+
+            const shareLink = () => {
+                navigator.clipboard.writeText(window.location.href);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
             };
 
             const setupWebRTC = async () => {
@@ -152,12 +154,11 @@
                     pc.current.onicecandidate = e => {
                         if (e.candidate) database.ref(`rooms/${room}/video/candidates/${user}`).push(e.candidate.toJSON());
                     };
-                } catch (e) { alert("Accesso camera negato."); setCallActive(false); }
+                } catch (e) { alert("Attiva fotocamera!"); setCallActive(false); }
             };
 
             const startCall = async () => {
-                setCallActive(true);
-                await setupWebRTC();
+                setCallActive(true); await setupWebRTC();
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
                 await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, from: user });
@@ -184,6 +185,8 @@
                 if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
                 if (pc.current) { pc.current.close(); pc.current = null; }
                 setCallActive(false); setIncomingCall(null);
+                if (localVideo.current) localVideo.current.srcObject = null;
+                if (remoteVideo.current) remoteVideo.current.srcObject = null;
             };
 
             const sendMessage = () => {
@@ -194,18 +197,12 @@
 
             if (isLogin) return (
                 <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
-                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, border:'1px solid #334155', width:400, boxShadow:'0 20px 40px rgba(0,0,0,0.4)'}}>
-                        <h1 style={{color:'#6366f1', marginBottom:10, letterSpacing:2}}>EFFIMERA</h1>
-                        <p style={{color:'#94a3b8', marginBottom:30}}>Entra nella Stanza: {room}</p>
-                        <input 
-                            className="input-field" 
-                            placeholder="Inserisci il tuo nome" 
-                            value={user} 
-                            onChange={e=>setUser(e.target.value)} 
-                            onKeyPress={e => e.key === 'Enter' && handleLoginAction()}
-                            style={{width:'100%', marginBottom:25, textAlign:'center'}} 
-                        />
-                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15, fontSize:18}} onClick={handleLoginAction}>ENTRA</button>
+                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, width:400, border:'1px solid #334155'}}>
+                        <div className="logo-icon" style={{margin:'0 auto 20px'}}>🛡️</div>
+                        <h1 style={{color:'#6366f1', marginBottom:10}}>EFFIMERA</h1>
+                        <p style={{color:'#94a3b8', marginBottom:25}}>Stanza: {room}</p>
+                        <input className="input-field" placeholder="Tuo Nome" value={user} onChange={e=>setUser(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleLogin()} style={{width:'100%', marginBottom:25, textAlign:'center'}} />
+                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={handleLogin}>ENTRA</button>
                     </div>
                 </div>
             );
@@ -213,26 +210,29 @@
             return (
                 <div className="app-container">
                     <header className="header">
-                        <div className="logo-area"><h1>EFFIMERA</h1><p>Privacy Totale</p></div>
+                        <div className="logo-area">
+                            <div className="logo-icon">🛡️</div>
+                            <div><h1>EFFIMERA</h1><p>Messaggi che svaniscono nel nulla</p></div>
+                        </div>
                         <div className="actions">
                             <div className="presence-list">
-                                <div className="user-badge"><div className="dot"></div> Tu ({user})</div>
+                                <div className="user-badge"><div className="dot"></div> Tu: {user}</div>
                                 {Object.keys(presence).filter(u => u !== user).map(u => (
                                     <div key={u} className="user-badge"><div className="dot" style={{background:'#eab308'}}></div> {u}</div>
                                 ))}
                             </div>
                             
+                            <button className="btn btn-invite" onClick={shareLink}>
+                                {copied ? "✅ Link Copiato" : "🔗 Invita"}
+                            </button>
+
                             {incomingCall ? (
-                                <button className="btn incoming-call-btn" onClick={acceptCall}>
-                                    📞 CHIAMATA DA {incomingCall.from.toUpperCase()}
-                                </button>
+                                <button className="btn incoming-call-btn" onClick={acceptCall}>📞 RISPONDI A {incomingCall.from}</button>
                             ) : (
-                                <button className="btn btn-video" onClick={startCall} disabled={callActive}>
-                                    {callActive ? "In Video..." : "Videochiamata"}
-                                </button>
+                                <button className="btn btn-video" onClick={startCall} disabled={callActive}>{callActive ? "In Video..." : "Video"}</button>
                             )}
                             
-                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota</button>
+                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota Chat</button>
                             <button className="btn btn-exit" onClick={() => { localStorage.removeItem(`user_${room}`); window.location.replace(window.location.pathname); }}>Esci</button>
                         </div>
                     </header>
@@ -252,11 +252,11 @@
                     <div className="video-box" style={{ display: callActive ? 'block' : 'none' }}>
                         <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
                         <video ref={localVideo} className="local-video" autoPlay muted playsInline />
-                        <button onClick={() => database.ref(`rooms/${room}/video`).remove()} style={{position:'absolute', top:15, right:15, background:'rgba(255,0,0,0.7)', border:'none', color:'white', width:35, height:35, borderRadius:'50%', cursor:'pointer', fontWeight:'bold'}}>X</button>
+                        <button onClick={() => database.ref(`rooms/${room}/video`).remove()} style={{position:'absolute', top:15, right:15, background:'red', border:'none', color:'white', width:35, height:35, borderRadius:'50%', cursor:'pointer', fontWeight:'bold'}}>X</button>
                     </div>
 
                     <footer className="input-bar">
-                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Scrivi un messaggio..." />
+                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Invia un messaggio criptato..." />
                         <button className="btn-send" onClick={sendMessage}>➔</button>
                     </footer>
                 </div>

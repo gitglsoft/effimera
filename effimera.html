@@ -17,7 +17,6 @@
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
         
-        /* Animazione Chiamata */
         @keyframes pulse-green { 
             0% { background: #22c55e; box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
             70% { background: #16a34a; box-shadow: 0 0 0 15px rgba(34, 197, 94, 0); }
@@ -27,42 +26,38 @@
 
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
         
-        /* Header stile Screenshot */
         .header { padding: 20px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.05); background: rgba(10,14,39,0.8); z-index: 10; }
         .logo-area { display: flex; align-items: center; gap: 15px; }
         .logo-icon { width: 40px; height: 40px; background: #312e81; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; justify-content: center; align-items: center; border: 2px solid #6366f1; }
         .logo-area h1 { font-size: 28px; letter-spacing: 3px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
-        .logo-area p { font-size: 12px; color: #94a3b8; font-style: italic; }
 
         .actions { display: flex; gap: 10px; align-items: center; }
         .user-badge { background: #1e293b; padding: 8px 15px; border-radius: 20px; font-size: 14px; border: 1px solid #334155; display: flex; align-items: center; gap: 8px; }
         .dot { width: 10px; height: 10px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
 
-        /* Pulsanti */
         .btn { padding: 10px 18px; border-radius: 10px; border: none; cursor: pointer !important; font-weight: 600; display: flex; align-items: center; gap: 8px; transition: all 0.2s; color: white; font-family: 'Crimson Pro', serif; }
-        .btn:hover { transform: translateY(-2px); filter: brightness(1.2); }
-        
-        .btn-invite { background: #4f46e5; border: 1px solid rgba(255,255,255,0.1); }
+        .btn-invite { background: #4f46e5; }
         .btn-video { background: #22c55e; }
         .btn-clear { background: #991b1b; }
         .btn-exit { background: #9a3412; }
 
-        /* Chat */
         .chat-area { flex: 1; overflow-y: auto; padding: 40px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 70%; }
         .msg-wrap.own { align-self: flex-end; align-items: flex-end; }
         .sender-name { font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: 4px; padding: 0 10px; }
-        .bubble { padding: 14px 20px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; font-size: 18px; line-height: 1.4; }
+        .bubble { padding: 14px 20px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; font-size: 18px; line-height: 1.4; position: relative; }
         .own .bubble { background: #312e81; border-color: #4338ca; }
         
         .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
 
-        /* Video Box */
+        /* Puntini di sospensione lampeggianti */
+        .typing-indicator { color: #94a3b8; font-size: 24px; font-weight: bold; padding: 5px 20px; animation: blink 1.4s infinite; display: inline-block; }
+        @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
+
         .video-box { position: fixed; bottom: 100px; right: 40px; width: 320px; height: 420px; background: #000; border-radius: 20px; border: 2px solid #6366f1; overflow: hidden; z-index: 1000; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
         .remote-video { width: 100%; height: 100%; object-fit: cover; }
         .local-video { position: absolute; bottom: 15px; right: 15px; width: 90px; height: 120px; border-radius: 10px; border: 2px solid #6366f1; object-fit: cover; z-index: 1001; background: #222; }
 
-        /* Input */
         .input-bar { padding: 25px 40px; background: rgba(10,14,39,0.9); display: flex; gap: 15px; }
         .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px 20px; color: white; outline: none; font-size: 16px; }
         .btn-send { background: #6366f1; width: 55px; height: 55px; border-radius: 12px; border: none; color: white; cursor: pointer; font-size: 20px; }
@@ -94,11 +89,13 @@
             const [callActive, setCallActive] = useState(false);
             const [incomingCall, setIncomingCall] = useState(null);
             const [copied, setCopied] = useState(false);
+            const [isOtherTyping, setIsOtherTyping] = useState(false);
             
             const pc = useRef(null);
             const localVideo = useRef(null);
             const remoteVideo = useRef(null);
             const streamRef = useRef(null);
+            const typingTimeoutRef = useRef(null);
 
             useEffect(() => {
                 const params = new URLSearchParams(window.location.search);
@@ -122,6 +119,12 @@
                 });
                 database.ref(`rooms/${room}/presence`).on('value', s => setPresence(s.val() || {}));
 
+                database.ref(`rooms/${room}/typing`).on('value', snap => {
+                    const typingData = snap.val() || {};
+                    const othersTyping = Object.keys(typingData).some(u => u !== user && typingData[u] === true);
+                    setIsOtherTyping(othersTyping);
+                });
+
                 database.ref(`rooms/${room}/video/offer`).on('value', snap => {
                     const offer = snap.val();
                     if (offer && offer.from !== user) setIncomingCall(offer);
@@ -131,17 +134,20 @@
                 return () => { database.ref(`rooms/${room}`).off(); };
             }, [isLogin, room, user]);
 
+            const handleTyping = (e) => {
+                setInput(e.target.value);
+                database.ref(`rooms/${room}/typing/${user}`).set(true);
+                if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+                typingTimeoutRef.current = setTimeout(() => {
+                    database.ref(`rooms/${room}/typing/${user}`).set(false);
+                }, 2000);
+            };
+
             const handleLogin = () => {
                 if(!user.trim()) return;
                 localStorage.setItem(`user_${room}`, user);
                 window.history.pushState({},'',`?room=${room}`);
                 setIsLogin(false);
-            };
-
-            const shareLink = () => {
-                navigator.clipboard.writeText(window.location.href);
-                setCopied(true);
-                setTimeout(() => setCopied(false), 2000);
             };
 
             const setupWebRTC = async () => {
@@ -151,9 +157,6 @@
                     if (localVideo.current) localVideo.current.srcObject = streamRef.current;
                     streamRef.current.getTracks().forEach(track => pc.current.addTrack(track, streamRef.current));
                     pc.current.ontrack = e => { if (remoteVideo.current) remoteVideo.current.srcObject = e.streams[0]; };
-                    pc.current.onicecandidate = e => {
-                        if (e.candidate) database.ref(`rooms/${room}/video/candidates/${user}`).push(e.candidate.toJSON());
-                    };
                 } catch (e) { alert("Attiva fotocamera!"); setCallActive(false); }
             };
 
@@ -162,13 +165,6 @@
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
                 await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, from: user });
-                database.ref(`rooms/${room}/video/answer`).on('value', async s => {
-                    const ans = s.val();
-                    if (ans && pc.current.signalingState === 'have-local-offer') await pc.current.setRemoteDescription(new RTCSessionDescription(ans));
-                });
-                database.ref(`rooms/${room}/video/candidates`).on('child_added', s => {
-                    if (s.key !== user) s.ref.on('child_added', c => pc.current.addIceCandidate(new RTCIceCandidate(c.val())));
-                });
             };
 
             const acceptCall = async () => {
@@ -178,20 +174,18 @@
                 const answer = await pc.current.createAnswer();
                 await pc.current.setLocalDescription(answer);
                 await database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type });
-                database.ref(`rooms/${room}/video/candidates/${offer.from}`).on('child_added', s => pc.current.addIceCandidate(new RTCIceCandidate(s.val())));
             };
 
             const closeVideoLogic = () => {
                 if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
                 if (pc.current) { pc.current.close(); pc.current = null; }
                 setCallActive(false); setIncomingCall(null);
-                if (localVideo.current) localVideo.current.srcObject = null;
-                if (remoteVideo.current) remoteVideo.current.srcObject = null;
             };
 
             const sendMessage = () => {
                 if (!input.trim()) return;
                 database.ref(`rooms/${room}/messages`).push({ text: input, sender: user, ts: Date.now() });
+                database.ref(`rooms/${room}/typing/${user}`).set(false);
                 setInput('');
             };
 
@@ -200,7 +194,6 @@
                     <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, width:400, border:'1px solid #334155'}}>
                         <div className="logo-icon" style={{margin:'0 auto 20px'}}>🛡️</div>
                         <h1 style={{color:'#6366f1', marginBottom:10}}>EFFIMERA</h1>
-                        <p style={{color:'#94a3b8', marginBottom:25}}>Stanza: {room}</p>
                         <input className="input-field" placeholder="Tuo Nome" value={user} onChange={e=>setUser(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleLogin()} style={{width:'100%', marginBottom:25, textAlign:'center'}} />
                         <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={handleLogin}>ENTRA</button>
                     </div>
@@ -210,10 +203,7 @@
             return (
                 <div className="app-container">
                     <header className="header">
-                        <div className="logo-area">
-                            <div className="logo-icon">🛡️</div>
-                            <div><h1>EFFIMERA</h1><p>Messaggi che svaniscono nel nulla</p></div>
-                        </div>
+                        <div className="logo-area"><div className="logo-icon">🛡️</div><div><h1>EFFIMERA</h1></div></div>
                         <div className="actions">
                             <div className="presence-list">
                                 <div className="user-badge"><div className="dot"></div> Tu: {user}</div>
@@ -221,19 +211,10 @@
                                     <div key={u} className="user-badge"><div className="dot" style={{background:'#eab308'}}></div> {u}</div>
                                 ))}
                             </div>
-                            
-                            <button className="btn btn-invite" onClick={shareLink}>
-                                {copied ? "✅ Link Copiato" : "🔗 Invita"}
-                            </button>
-
-                            {incomingCall ? (
-                                <button className="btn incoming-call-btn" onClick={acceptCall}>📞 RISPONDI A {incomingCall.from}</button>
-                            ) : (
-                                <button className="btn btn-video" onClick={startCall} disabled={callActive}>{callActive ? "In Video..." : "Video"}</button>
-                            )}
-                            
-                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota Chat</button>
-                            <button className="btn btn-exit" onClick={() => { localStorage.removeItem(`user_${room}`); window.location.replace(window.location.pathname); }}>Esci</button>
+                            <button className="btn btn-invite" onClick={() => { navigator.clipboard.writeText(window.location.href); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>{copied ? "✅ Link Copiato" : "🔗 Invita"}</button>
+                            {incomingCall ? <button className="btn incoming-call-btn" onClick={acceptCall}>📞 RISPONDI</button> : <button className="btn btn-video" onClick={startCall}>{callActive ? "In Video..." : "Video"}</button>}
+                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>Svuota</button>
+                            <button className="btn btn-exit" onClick={() => { localStorage.removeItem(`user_${room}`); window.location.reload(); }}>Esci</button>
                         </div>
                     </header>
 
@@ -243,20 +224,25 @@
                                 <span className="sender-name">{m.sender}</span>
                                 <div className="bubble">
                                     <div id={`txt-${m.id}`} style={{filter: m.sender !== user ? 'blur(6px)' : 'none', transition: '0.3s'}}>{m.text}</div>
-                                    {m.sender !== user && <button className="btn-read" onClick={(e) => { document.getElementById(`txt-${m.id}`).style.filter = 'none'; e.target.remove(); setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 3500); }}>Leggi (3s)</button>}
+                                    {m.sender !== user && <button className="btn-read" onClick={(e) => { 
+                                        document.getElementById(`txt-${m.id}`).style.filter = 'none'; 
+                                        e.target.innerText = "Svanisce tra 10s...";
+                                        setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 10000); 
+                                    }}>Leggi (10s)</button>}
                                 </div>
                             </div>
                         ))}
+                        {isOtherTyping && <div className="typing-indicator">...</div>}
                     </main>
 
                     <div className="video-box" style={{ display: callActive ? 'block' : 'none' }}>
                         <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
                         <video ref={localVideo} className="local-video" autoPlay muted playsInline />
-                        <button onClick={() => database.ref(`rooms/${room}/video`).remove()} style={{position:'absolute', top:15, right:15, background:'red', border:'none', color:'white', width:35, height:35, borderRadius:'50%', cursor:'pointer', fontWeight:'bold'}}>X</button>
+                        <button onClick={() => database.ref(`rooms/${room}/video`).remove()} style={{position:'absolute', top:15, right:15, background:'red', border:'none', color:'white', width:35, height:35, borderRadius:'50%', cursor:'pointer'}}>X</button>
                     </div>
 
                     <footer className="input-bar">
-                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Invia un messaggio criptato..." />
+                        <input className="input-field" value={input} onChange={handleTyping} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Invia un messaggio criptato..." />
                         <button className="btn-send" onClick={sendMessage}>➔</button>
                     </footer>
                 </div>

@@ -96,6 +96,7 @@
             const [input, setInput] = useState('');
             const [callActive, setCallActive] = useState(false);
             const [isOtherTyping, setIsOtherTyping] = useState(false);
+            const [incomingCall, setIncomingCall] = useState(null); // { from, offer }
             
             const pc = useRef(null);
             const localVideo = useRef(null);
@@ -130,26 +131,23 @@
                 });
 
                 // WebRTC offer listener
-                database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
-    const offer = snap.val();
-    console.log('📡 OFFER ricevuto:', offer, 'Mio sessionId:', sessionId, 'callActive:', callActive);
-    
-    if (offer && offer.sid !== sessionId) {
-        console.log('✅ Offer valido, controllo callActive...');
-        if (!callActive) {
-            console.log('🔔 Mostro popup di accettazione...');
-            const accetta = confirm(`📹 Chiamata video da ${offer.from}. Accetti?`);
-            console.log('👤 Risposta utente:', accetta);
-            if (accetta) {
-                console.log('🚀 Chiamo acceptCall...');
-                acceptCall(offer);
-            }
-        } else {
-            console.warn('⚠️ callActive=true, ignoro offer');
-        }
-    } else if (!offer && callActive) {
-        console.log('🔚 Offer rimosso, chiudo chiamata');
-        stopVideo();
+                            // WebRTC offer listener (con DEBUG)
+            database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
+                const offer = snap.val();
+                console.log('📡 OFFER ricevuto:', offer, '| Mio SID:', sessionId, '| callActive:', callActive);
+                
+                if (offer && offer.sid !== sessionId) {
+                    if (!callActive) {
+                        console.log('✅ Offer valido e chiamata inattiva → mostro prompt');
+                        if(confirm(`📹 Chiamata video da ${offer.from}. Accetti?`)) acceptCall(offer);
+                    } else {
+                        console.warn('⚠️ Offerta ignorata: chiamata già attiva');
+                    }
+                } else if (!offer && callActive) {
+                    console.log('🔚 Offer rimosso → chiudo chiamata');
+                    stopVideo();
+                }
+            });
     }
 });
 

@@ -131,13 +131,27 @@
 
                 // WebRTC offer listener
                 database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
-                    const offer = snap.val();
-                    if (offer && offer.sid !== sessionId && !callActive) {
-                        if(confirm(`Chiamata video da ${offer.from}. Accetti?`)) acceptCall(offer);
-                    } else if (!offer && callActive) {
-                        stopVideo();
-                    }
-                });
+    const offer = snap.val();
+    console.log('📡 OFFER ricevuto:', offer, 'Mio sessionId:', sessionId, 'callActive:', callActive);
+    
+    if (offer && offer.sid !== sessionId) {
+        console.log('✅ Offer valido, controllo callActive...');
+        if (!callActive) {
+            console.log('🔔 Mostro popup di accettazione...');
+            const accetta = confirm(`📹 Chiamata video da ${offer.from}. Accetti?`);
+            console.log('👤 Risposta utente:', accetta);
+            if (accetta) {
+                console.log('🚀 Chiamo acceptCall...');
+                acceptCall(offer);
+            }
+        } else {
+            console.warn('⚠️ callActive=true, ignoro offer');
+        }
+    } else if (!offer && callActive) {
+        console.log('🔚 Offer rimosso, chiudo chiamata');
+        stopVideo();
+    }
+});
 
                 return () => database.ref(`rooms/${room}`).off();
             }, [isLogin, room, user]);
@@ -205,6 +219,7 @@ useEffect(() => {
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
                 database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, sid: sessionId, from: user });
+                console.log('📤 OFFER inviato:', { sdp: offer.sdp?.substring(0,50)+'...', type: offer.type, sid: sessionId, from: user });
             };
 
             const acceptCall = async (offer) => {

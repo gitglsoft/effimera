@@ -96,7 +96,7 @@
             const [input, setInput] = useState('');
             const [callActive, setCallActive] = useState(false);
             const [isOtherTyping, setIsOtherTyping] = useState(false);
-            const [incomingCall, setIncomingCall] = useState(null); // { from, offer }
+            const [incomingCall, setIncomingCall] = useState(null);
             
             const pc = useRef(null);
             const localVideo = useRef(null);
@@ -117,131 +117,123 @@
 
             useEffect(() => {
                 if (isLogin || !room) return;
+                
+                // Messages listener
                 database.ref(`rooms/${room}/messages`).on('value', snap => {
                     const data = snap.val() || {};
                     setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
                 });
+                
+                // Presence listener
                 const myPRef = database.ref(`rooms/${room}/presence/${sessionId}`);
                 myPRef.onDisconnect().remove();
                 myPRef.set({ name: user, ts: Date.now() });
                 database.ref(`rooms/${room}/presence`).on('value', s => setPresence(Object.values(s.val() || {})));
+                
+                // Typing listener
                 database.ref(`rooms/${room}/typing`).on('value', s => {
                     const data = s.val() || {};
                     setIsOtherTyping(Object.keys(data).some(k => k !== sessionId && data[k] === true));
                 });
 
                 // WebRTC offer listener
-                            // WebRTC offer listener (con DEBUG)
-            database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
-                const offer = snap.val();
-                console.log('📡 OFFER ricevuto:', offer, '| Mio SID:', sessionId, '| callActive:', callActive);
-                
-                if (offer && offer.sid !== sessionId) {
-                    if (!callActive) {
-                        console.log('✅ Offer valido e chiamata inattiva → mostro prompt');
-                        if(confirm(`📹 Chiamata video da ${offer.from}. Accetti?`)) acceptCall(offer);
-                    } else {
-                        console.warn('⚠️ Offerta ignorata: chiamata già attiva');
+                database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
+                    const offer = snap.val();
+                    console.log('📡 OFFER:', offer, 'Mio SID:', sessionId);
+                    
+                    if (offer && offer.sid !== sessionId && !callActive && !incomingCall) {
+                        setIncomingCall({ from: offer.from, offer });
+                    } else if (!offer && callActive) {
+                        stopVideo();
                     }
-                } else if (!offer && callActive) {
-                    console.log('🔚 Offer rimosso → chiudo chiamata');
-                    stopVideo();
-                }
-            });
- 
+                });
 
                 return () => database.ref(`rooms/${room}`).off();
             }, [isLogin, room, user]);
-            // === NUOVO useEffect: gestione answer + ICE candidates ===
-useEffect(() => {
-    if (isLogin || !room || !callActive) return;
-    
-    // 1. Listener per ricevere l'ANSWER dal peer remoto
-    const answerRef = database.ref(`rooms/${room}/video/answer`);
-    answerRef.on('value', async snap => {
-        const answer = snap.val();
-        if (answer && answer.sid !== sessionId && pc.current && pc.current.signalingState !== 'stable') {
-            try {
-                await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
-            } catch (e) { console.warn('Error setting remote answer:', e); }
-        }
-    });
 
-    // 2. Gestione ICE candidates locali
-    const handleIceCandidate = (event) => {
-        if (event.candidate) {
-            database.ref(`rooms/${room}/video/candidates/${sessionId}`).push({
-                candidate: event.candidate.toJSON(),
-                sid: sessionId,
-                ts: Date.now()
-            });
-        }
-    };
-    
-    if (pc.current) {
-        pc.current.onicecandidate = handleIceCandidate;
-    }
-
-    // 3. Listener per i candidati ICE remoti
-    const candidatesRef = database.ref(`rooms/${room}/video/candidates`);
-    candidatesRef.on('child_added', async snap => {
-        const data = snap.val();
-        if (data && data.sid !== sessionId && pc.current) {
-            try {
-                await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-            } catch (e) { console.warn('ICE candidate error:', e); }
-        }
-    });
-
-    // Cleanup alla disconnessione
-    return () => {
-        answerRef.off();
-        candidatesRef.off();
-        if (pc.current) pc.current.onicecandidate = null;
-    };
-}, [isLogin, room, callActive, sessionId]);
-// === FINE nuovo useEffect ===
-
-        const setupWebRTC = async () => {
-            // 1. Configurazione connessione con STUN servers
-            const config = {
-                iceServers: [
-                    { urls: 'stun:stun.l.google.com:19302' },
-                    { urls: 'stun:stun1.l.google.com:19302' }
-                ]
-            };
-            pc.current = new RTCPeerConnection(config);
-
-            try {
-                // 2. Richiesta permessi camera/microfono
-                streamRef.current = await navigator.mediaDevices.getUserMedia({ 
-                    video: { width: 640, height: 480 },
-                    audio: true 
+            // WebRTC answer + ICE candidates listener
+            useEffect(() => {
+                if (isLogin || !room || !callActive) return;
+                
+                // Answer listener
+                const answerRef = database.ref(`rooms/${room}/video/answer`);
+                answerRef.on('value', async snap => {
+                    const answer = snap.val();
+                    if (answer && answer.sid !== sessionId && pc.current && pc.current.signalingState !== 'stable') {
+                        try {
+                            await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
+                        } catch (e) { console.warn('Error setting remote answer:', e); }
+                    }
                 });
 
-                // 3. Mostra video locale
-                if (localVideo.current) {
-                    localVideo.current.srcObject = streamRef.current;
-                }
-
-                // 4. Aggiungi tracce alla PeerConnection
-                streamRef.current.getTracks().forEach(track => {
-                    pc.current.addTrack(track);
-                });
-
-                // 5. Gestione ricezione video remoto
-                pc.current.ontrack = (event) => {
-                    if (remoteVideo.current) {
-                        remoteVideo.current.srcObject = event.streams[0];
+                // ICE candidates locali
+                const handleIceCandidate = (event) => {
+                    if (event.candidate) {
+                        database.ref(`rooms/${room}/video/candidates/${sessionId}`).push({
+                            candidate: event.candidate.toJSON(),
+                            sid: sessionId,
+                            ts: Date.now()
+                        });
                     }
                 };
+                
+                if (pc.current) {
+                    pc.current.onicecandidate = handleIceCandidate;
+                }
 
-            } catch (err) {
-                console.error("❌ Errore getUserMedia:", err);
-                alert("⚠️ Impossibile accedere alla videocamera.\n\n1. Clicca sul 🔒 nella barra degli indirizzi\n2. Consenti l'accesso alla videocamera\n3. Ricarica la pagina");
-                throw err; // Rilancia l'errore per fermare l'esecuzione
-            }
-        };
+                // ICE candidates remoti
+                const candidatesRef = database.ref(`rooms/${room}/video/candidates`);
+                candidatesRef.on('child_added', async snap => {
+                    const data = snap.val();
+                    if (data && data.sid !== sessionId && pc.current) {
+                        try {
+                            await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+                        } catch (e) { console.warn('ICE candidate error:', e); }
+                    }
+                });
+
+                return () => {
+                    answerRef.off();
+                    candidatesRef.off();
+                    if (pc.current) pc.current.onicecandidate = null;
+                };
+            }, [isLogin, room, callActive, sessionId]);
+
+            const setupWebRTC = async () => {
+                const config = {
+                    iceServers: [
+                        { urls: 'stun:stun.l.google.com:19302' },
+                        { urls: 'stun:stun1.l.google.com:19302' }
+                    ]
+                };
+                pc.current = new RTCPeerConnection(config);
+
+                try {
+                    streamRef.current = await navigator.mediaDevices.getUserMedia({ 
+                        video: { width: 640, height: 480 },
+                        audio: true 
+                    });
+
+                    if (localVideo.current) {
+                        localVideo.current.srcObject = streamRef.current;
+                    }
+
+                    streamRef.current.getTracks().forEach(track => {
+                        pc.current.addTrack(track);
+                    });
+
+                    pc.current.ontrack = (event) => {
+                        if (remoteVideo.current) {
+                            remoteVideo.current.srcObject = event.streams[0];
+                        }
+                    };
+
+                } catch (err) {
+                    console.error("❌ Errore getUserMedia:", err);
+                    alert("⚠️ Impossibile accedere alla videocamera.\n\n1. Clicca sul 🔒 nella barra degli indirizzi\n2. Consenti l'accesso alla videocamera\n3. Ricarica la pagina");
+                    throw err;
+                }
+            };
 
             const startCall = async () => {
                 setCallActive(true);
@@ -249,39 +241,45 @@ useEffect(() => {
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
                 database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, sid: sessionId, from: user });
-                console.log('📤 OFFER inviato:', { sdp: offer.sdp?.substring(0,50)+'...', type: offer.type, sid: sessionId, from: user });
             };
 
             const acceptCall = async (offer) => {
-    setCallActive(true);
-    await setupWebRTC();
-    
-    // 🧹 Pulisci dati di chiamate precedenti per evitare conflitti
-    await database.ref(`rooms/${room}/video/answer`).remove();
-    await database.ref(`rooms/${room}/video/candidates`).remove();
-    
-    await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
-    const answer = await pc.current.createAnswer();
-    await pc.current.setLocalDescription(answer);
-    
-    database.ref(`rooms/${room}/video/answer`).set({ 
-        sdp: answer.sdp, 
-        type: answer.type, 
-        sid: sessionId 
-    });
-};
+                try {
+                    setCallActive(true);
+                    setIncomingCall(null);
+                    
+                    await setupWebRTC();
+                    
+                    await database.ref(`rooms/${room}/video/answer`).remove();
+                    await database.ref(`rooms/${room}/video/candidates`).remove();
+                    
+                    await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
+                    const answer = await pc.current.createAnswer();
+                    await pc.current.setLocalDescription(answer);
+                    
+                    database.ref(`rooms/${room}/video/answer`).set({ 
+                        sdp: answer.sdp, 
+                        type: answer.type, 
+                        sid: sessionId 
+                    });
+                } catch (err) {
+                    console.error('❌ Errore accettazione chiamata:', err);
+                    alert('⚠️ Impossibile accedere alla webcam/microfono.\nControlla i permessi del browser e riprova.');
+                    setCallActive(false);
+                    stopVideo();
+                }
+            };
 
-           const stopVideo = () => {
-    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-    if (pc.current) {
-        pc.current.onicecandidate = null; // Rimuovi listener ICE
-        pc.current.close();               // Chiudi PeerConnection
-    }
-    setCallActive(false);
-    
-    // 🧹 Pulizia signaling su Firebase per la prossima chiamata
-    database.ref(`rooms/${room}/video`).remove();
-};
+            const stopVideo = () => {
+                if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+                if (pc.current) {
+                    pc.current.onicecandidate = null;
+                    pc.current.close();
+                }
+                setCallActive(false);
+                setIncomingCall(null);
+                database.ref(`rooms/${room}/video`).remove();
+            };
 
             const handleFile = async (e) => {
                 const file = e.target.files[0];
@@ -305,12 +303,27 @@ useEffect(() => {
                 database.ref(`rooms/${room}/typing/${sessionId}`).set(false);
             };
 
+            const handleInputChange = (e) => {
+                const value = e.target.value;
+                setInput(value);
+                
+                const isTyping = value.length > 0;
+                database.ref(`rooms/${room}/typing/${sessionId}`).set(isTyping);
+                
+                clearTimeout(window.typingTimer);
+                if (isTyping) {
+                    window.typingTimer = setTimeout(() => {
+                        database.ref(`rooms/${room}/typing/${sessionId}`).set(false);
+                    }, 2500);
+                }
+            };
+
             if (isLogin) return (
                 <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
                     <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, width:350, border:'1px solid #334155'}}>
                         <div className="logo-icon" style={{margin:'0 auto 20px'}}>🛡️</div>
                         <h1 style={{color:'#6366f1', marginBottom:20}}>EFFIMERA</h1>
-                        <input className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} onKeyPress={e=>e.key==='Enter' && setIsLogin(false)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
+                        <input name="username" className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} onKeyPress={e=>e.key==='Enter' && setIsLogin(false)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
                         <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={()=>setIsLogin(false)}>🚀 ENTRA</button>
                     </div>
                 </div>
@@ -357,6 +370,37 @@ useEffect(() => {
                         {isOtherTyping && <div className="typing">... sta scrivendo</div>}
                     </main>
 
+                    {/* Notifica chiamata in arrivo */}
+                    {incomingCall && (
+                        <div style={{
+                            position: 'fixed', top: 80, right: 30, 
+                            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', 
+                            padding: '15px 20px', borderRadius: 15, 
+                            boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
+                            zIndex: 2000, minWidth: 250, textAlign: 'center',
+                            border: '2px solid #a78bfa', animation: 'pulse 2s infinite'
+                        }}>
+                            <div style={{fontSize: 14, marginBottom: 12}}>
+                                📹 <strong>{incomingCall.from}</strong> ti sta chiamando...
+                            </div>
+                            <div style={{display: 'flex', gap: 10, justifyContent: 'center'}}>
+                                <button onClick={() => {
+                                    acceptCall(incomingCall.offer);
+                                }} style={{
+                                    background: '#22c55e', border: 'none', color: 'white',
+                                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'
+                                }}>✅ Accetta</button>
+                                <button onClick={() => {
+                                    database.ref(`rooms/${room}/video/offer`).remove();
+                                    setIncomingCall(null);
+                                }} style={{
+                                    background: '#ef4444', border: 'none', color: 'white',
+                                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'
+                                }}>❌ Rifiuta</button>
+                            </div>
+                        </div>
+                    )}
+
                     {callActive && (
                         <div className="video-box">
                             <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
@@ -367,7 +411,7 @@ useEffect(() => {
 
                     <footer className="footer-container">
                         <div className="emoji-bar">
-                            {['😊','😂','❤️','🔥','👍','🙌','😮','😢','🤐','🛡️'].map(e => (
+                            {['😊','😂','❤️','🔥','','🙌','','😢','','🛡️'].map(e => (
                                 <span key={e} className="emoji-item" onClick={() => {setInput(p => p+e); inputRef.current.focus();}}>{e}</span>
                             ))}
                         </div>
@@ -377,24 +421,14 @@ useEffect(() => {
                                 <span className="file-label">Max 3MB</span>
                             </div>
                             <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleFile} />
-                            <input ref={inputRef} className="input-field" value={input} 
-                                onChange={e => {
-    setInput(e.target.value);
-    const isTyping = e.target.value.length > 0;
-    database.ref(`rooms/${room}/typing/${sessionId}`).set(isTyping);
-    
-    // Debounce: azzera typing dopo 2.5 secondi di inattività
-    clearTimeout(window.typingTimer);
-    if (isTyping) {
-        window.typingTimer = setTimeout(() => {
-            database.ref(`rooms/${room}/typing/${sessionId}`).set(false);
-        }, 2500);
-    }
-}}
+                            <input ref={inputRef} name="message-input" className="input-field" value={input} 
+                                onChange={handleInputChange}
                                 onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Messaggio..." />
                             <button className="btn-send" onClick={sendMessage}>⚡</button>
                         </div>
                     </footer>
+                    
+                    <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }`}</style>
                 </div>
             );
         };

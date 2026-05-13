@@ -136,14 +136,26 @@
                     setIsOtherTyping(Object.keys(data).some(k => k !== sessionId && data[k] === true));
                 });
 
-                // WebRTC offer listener
+                                // WebRTC offer listener
                 database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
+                    console.log('📡 Listener attivato!');
+                    console.log('📦 Snapshot value:', snap.val());
+                    console.log('🔑 Mio SID:', sessionId);
+                    
                     const offer = snap.val();
-                    console.log('📡 OFFER:', offer, 'Mio SID:', sessionId);
+                    
+                    if (!offer) {
+                        console.warn('⚠️ Offer è NULL o undefined');
+                        return;
+                    }
+                    
+                    console.log('📡 OFFER ricevuto:', offer, 'Mio SID:', sessionId, 'callActive:', callActive, 'incomingCall:', incomingCall);
                     
                     if (offer && offer.sid !== sessionId && !callActive && !incomingCall) {
+                        console.log('✅ Offer valido! Mostro notifica da:', offer.from);
                         setIncomingCall({ from: offer.from, offer });
                     } else if (!offer && callActive) {
+                        console.log('🔚 Offer rimosso → chiudo chiamata');
                         stopVideo();
                     }
                 });
@@ -235,12 +247,31 @@
                 }
             };
 
-            const startCall = async () => {
+                        const startCall = async () => {
+                console.log('🚀 Start chiamata...');
                 setCallActive(true);
                 await setupWebRTC();
                 const offer = await pc.current.createOffer();
                 await pc.current.setLocalDescription(offer);
-                database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, sid: sessionId, from: user });
+                
+                console.log('📤 Invio offer a Firebase:', { 
+                    type: offer.type, 
+                    hasSdp: !!offer.sdp,
+                    sid: sessionId,
+                    from: user 
+                });
+                
+                try {
+                    await database.ref(`rooms/${room}/video/offer`).set({ 
+                        sdp: offer.sdp, 
+                        type: offer.type, 
+                        sid: sessionId, 
+                        from: user 
+                    });
+                    console.log('✅ Offer inviato con successo!');
+                } catch (err) {
+                    console.error('❌ Errore invio offer:', err);
+                }
             };
 
             const acceptCall = async (offer) => {

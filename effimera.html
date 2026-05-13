@@ -141,6 +141,55 @@
 
                 return () => database.ref(`rooms/${room}`).off();
             }, [isLogin, room, user]);
+            // === NUOVO useEffect: gestione answer + ICE candidates ===
+useEffect(() => {
+    if (isLogin || !room || !callActive) return;
+    
+    // 1. Listener per ricevere l'ANSWER dal peer remoto
+    const answerRef = database.ref(`rooms/${room}/video/answer`);
+    answerRef.on('value', async snap => {
+        const answer = snap.val();
+        if (answer && answer.sid !== sessionId && pc.current && pc.current.signalingState !== 'stable') {
+            try {
+                await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
+            } catch (e) { console.warn('Error setting remote answer:', e); }
+        }
+    });
+
+    // 2. Gestione ICE candidates locali
+    const handleIceCandidate = (event) => {
+        if (event.candidate) {
+            database.ref(`rooms/${room}/video/candidates/${sessionId}`).push({
+                candidate: event.candidate.toJSON(),
+                sid: sessionId,
+                ts: Date.now()
+            });
+        }
+    };
+    
+    if (pc.current) {
+        pc.current.onicecandidate = handleIceCandidate;
+    }
+
+    // 3. Listener per i candidati ICE remoti
+    const candidatesRef = database.ref(`rooms/${room}/video/candidates`);
+    candidatesRef.on('child_added', async snap => {
+        const data = snap.val();
+        if (data && data.sid !== sessionId && pc.current) {
+            try {
+                await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
+            } catch (e) { console.warn('ICE candidate error:', e); }
+        }
+    });
+
+    // Cleanup alla disconnessione
+    return () => {
+        answerRef.off();
+        candidatesRef.off();
+        if (pc.current) pc.current.onicecandidate = null;
+    };
+}, [isLogin, room, callActive, sessionId]);
+// === FINE nuovo useEffect ===
 
             const setupWebRTC = async () => {
                 pc.current = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
@@ -159,19 +208,35 @@
             };
 
             const acceptCall = async (offer) => {
-                setCallActive(true);
-                await setupWebRTC();
-                await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
-                const answer = await pc.current.createAnswer();
-                await pc.current.setLocalDescription(answer);
-                database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type, sid: sessionId });
-            };
+    setCallActive(true);
+    await setupWebRTC();
+    
+    // 🧹 Pulisci dati di chiamate precedenti per evitare conflitti
+    await database.ref(`rooms/${room}/video/answer`).remove();
+    await database.ref(`rooms/${room}/video/candidates`).remove();
+    
+    await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
+    const answer = await pc.current.createAnswer();
+    await pc.current.setLocalDescription(answer);
+    
+    database.ref(`rooms/${room}/video/answer`).set({ 
+        sdp: answer.sdp, 
+        type: answer.type, 
+        sid: sessionId 
+    });
+};
 
-            const stopVideo = () => {
-                if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-                if (pc.current) pc.current.close();
-                setCallActive(false);
-            };
+           const stopVideo = () => {
+    if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
+    if (pc.current) {
+        pc.current.onicecandidate = null; // Rimuovi listener ICE
+        pc.current.close();               // Chiudi PeerConnection
+    }
+    setCallActive(false);
+    
+    // 🧹 Pulizia signaling su Firebase per la prossima chiamata
+    database.ref(`rooms/${room}/video`).remove();
+};
 
             const handleFile = async (e) => {
                 const file = e.target.files[0];
@@ -251,7 +316,7 @@
                         <div className="video-box">
                             <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
                             <video ref={localVideo} className="local-video" autoPlay muted playsInline />
-                            <button onClick={() => database.ref(`rooms/${room}/video`).remove()} style={{position:'absolute', top:10, right:10, background:'red', border:'none', color:'white', borderRadius:'50%', width:30, height:30, cursor:'pointer'}}>X</button>
+                            <button onClick={stopVideo} style={{position:'absolute', top:10, right:10, background:'red', border:'none', color:'white', borderRadius:'50%', width:30, height:30, cursor:'pointer'}}>X</button>
                         </div>
                     )}
 
@@ -268,7 +333,19 @@
                             </div>
                             <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleFile} />
                             <input ref={inputRef} className="input-field" value={input} 
-                                onChange={e=>{setInput(e.target.value); database.ref(`rooms/${room}/typing/${sessionId}`).set(e.target.value.length>0)}} 
+                                onChange={e => {
+    setInput(e.target.value);
+    const isTyping = e.target.value.length > 0;
+    database.ref(`rooms/${room}/typing/${sessionId}`).set(isTyping);
+    
+    // Debounce: azzera typing dopo 2.5 secondi di inattività
+    clearTimeout(window.typingTimer);
+    if (isTyping) {
+        window.typingTimer = setTimeout(() => {
+            database.ref(`rooms/${room}/typing/${sessionId}`).set(false);
+        }, 2500);
+    }
+}}
                                 onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Messaggio..." />
                             <button className="btn-send" onClick={sendMessage}>⚡</button>
                         </div>

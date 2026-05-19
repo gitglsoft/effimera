@@ -85,11 +85,19 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const sessionId = Math.random().toString(36).substring(7);
+
+        // Recupera o genera in modo persistente il sessionId all'interno della stessa scheda
+        let sessionId = sessionStorage.getItem('effimera_sid');
+        if (!sessionId) {
+            sessionId = Math.random().toString(36).substring(7);
+            sessionStorage.setItem('effimera_sid', sessionId);
+        }
 
         const App = () => {
-            const [isLogin, setIsLogin] = useState(true);
-            const [user, setUser] = useState('');
+            // Controlla se l'utente si era già loggato in questa sessione
+            const savedUser = sessionStorage.getItem('effimera_user') || '';
+            const [isLogin, setIsLogin] = useState(!savedUser);
+            const [user, setUser] = useState(savedUser);
             const [room, setRoom] = useState('');
             const [messages, setMessages] = useState([]);
             const [presence, setPresence] = useState([]);
@@ -118,6 +126,9 @@
             useEffect(() => {
                 if (isLogin || !room) return;
                 
+                // Salva lo stato del login per evitare disconnessioni
+                sessionStorage.setItem('effimera_user', user);
+
                 // Messages listener
                 database.ref(`rooms/${room}/messages`).on('value', snap => {
                     const data = snap.val() || {};
@@ -136,12 +147,11 @@
                     setIsOtherTyping(Object.keys(data).some(k => k !== sessionId && data[k] === true));
                 });
 
-                // WebRTC offer listener (VERSIONE ROBUSTA)
+                // WebRTC offer listener
                 database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
                     const offerData = snap.val();
                     if (!offerData || offerData.sid === sessionId) return;
                     if (callActive || incomingCall) return;
-                    
                     setIncomingCall({ from: offerData.from, offer: offerData });
                 });
 
@@ -159,7 +169,6 @@
             useEffect(() => {
                 if (isLogin || !room || !callActive) return;
                 
-                // Answer listener
                 const answerRef = database.ref(`rooms/${room}/video/answer`);
                 answerRef.on('value', async snap => {
                     const answer = snap.val();
@@ -170,7 +179,6 @@
                     }
                 });
 
-                // ICE candidates locali
                 const handleIceCandidate = (event) => {
                     if (event.candidate) {
                         database.ref(`rooms/${room}/video/candidates/${sessionId}`).push({
@@ -181,11 +189,8 @@
                     }
                 };
                 
-                if (pc.current) {
-                    pc.current.onicecandidate = handleIceCandidate;
-                }
+                if (pc.current) pc.current.onicecandidate = handleIceCandidate;
 
-                // ICE candidates remoti
                 const candidatesRef = database.ref(`rooms/${room}/video/candidates`);
                 candidatesRef.on('child_added', async snap => {
                     const data = snap.val();
@@ -201,40 +206,18 @@
                     candidatesRef.off();
                     if (pc.current) pc.current.onicecandidate = null;
                 };
-            }, [isLogin, room, callActive, sessionId]);
+            }, [isLogin, room, callActive]);
 
             const setupWebRTC = async () => {
-                const config = {
-                    iceServers: [
-                        { urls: 'stun:stun.l.google.com:19302' },
-                        { urls: 'stun:stun1.l.google.com:19302' }
-                    ]
-                };
+                const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
                 pc.current = new RTCPeerConnection(config);
-
                 try {
-                    streamRef.current = await navigator.mediaDevices.getUserMedia({ 
-                        video: { width: 640, height: 480 },
-                        audio: true 
-                    });
-
-                    if (localVideo.current) {
-                        localVideo.current.srcObject = streamRef.current;
-                    }
-
-                    streamRef.current.getTracks().forEach(track => {
-                        pc.current.addTrack(track, streamRef.current);
-                    });
-
-                    pc.current.ontrack = (event) => {
-                        if (remoteVideo.current) {
-                            remoteVideo.current.srcObject = event.streams[0];
-                        }
-                    };
-
+                    streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true });
+                    if (localVideo.current) localVideo.current.srcObject = streamRef.current;
+                    streamRef.current.getTracks().forEach(track => pc.current.addTrack(track, streamRef.current));
+                    pc.current.ontrack = (event) => { if (remoteVideo.current) remoteVideo.current.srcObject = event.streams[0]; };
                 } catch (err) {
-                    console.error("❌ Errore getUserMedia:", err);
-                    alert("⚠️ Impossibile accedere alla videocamera.\nControlla i permessi del browser.");
+                    alert("⚠️ Impossibile accedere alla videocamera. Controlla i permessi.");
                     throw err;
                 }
             };
@@ -245,61 +228,32 @@
                     await setupWebRTC();
                     const offer = await pc.current.createOffer();
                     await pc.current.setLocalDescription(offer);
-                    
                     await database.ref(`rooms/${room}/video/callState`).set('active');
-                    const offerRef = database.ref(`rooms/${room}/video/offer`);
-                    await offerRef.set({ 
-                        sdp: offer.sdp, 
-                        type: offer.type, 
-                        sid: sessionId, 
-                        from: user,
-                        ts: Date.now()
-                    });
-                } catch (err) {
-                    console.error('❌ Errore startCall:', err);
-                    setCallActive(false);
-                }
+                    await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, sid: sessionId, from: user, ts: Date.now() });
+                } catch (err) { setCallActive(false); }
             };
 
             const acceptCall = async (offer) => {
                 try {
                     setCallActive(true);
                     setIncomingCall(null);
-                    
                     await setupWebRTC();
-                    
                     await database.ref(`rooms/${room}/video/answer`).remove();
                     await database.ref(`rooms/${room}/video/candidates/${sessionId}`).remove();
-                    
                     await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
                     const answer = await pc.current.createAnswer();
                     await pc.current.setLocalDescription(answer);
-                    
-                    database.ref(`rooms/${room}/video/answer`).set({ 
-                        sdp: answer.sdp, 
-                        type: answer.type, 
-                        sid: sessionId 
-                    });
-                } catch (err) {
-                    console.error('❌ Errore accettazione chiamata:', err);
-                    setCallActive(false);
-                    stopVideo();
-                }
+                    database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type, sid: sessionId });
+                } catch (err) { setCallActive(false); stopVideo(); }
             };
 
             const stopVideo = () => {
                 if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-                if (pc.current) {
-                    pc.current.onicecandidate = null;
-                    pc.current.close();
-                }
+                if (pc.current) { pc.current.onicecandidate = null; pc.current.close(); }
                 setCallActive(false);
                 setIncomingCall(null);
                 database.ref(`rooms/${room}/video/callState`).set('ended');
-                // Svuota i dati temporanei del video dopo un secondo per permettere il riaggancio pulito
-                setTimeout(() => {
-                    database.ref(`rooms/${room}/video`).remove();
-                }, 1000);
+                setTimeout(() => { database.ref(`rooms/${room}/video`).remove(); }, 1000);
             };
 
             const handleFile = async (e) => {
@@ -327,20 +281,16 @@
             const handleInputChange = (e) => {
                 const value = e.target.value;
                 setInput(value);
-                
                 const isTyping = value.length > 0;
                 database.ref(`rooms/${room}/typing/${sessionId}`).set(isTyping);
-                
                 clearTimeout(window.typingTimer);
                 if (isTyping) {
-                    window.typingTimer = setTimeout(() => {
-                        database.ref(`rooms/${room}/typing/${sessionId}`).set(false);
-                    }, 2500);
+                    window.typingTimer = setTimeout(() => { database.ref(`rooms/${room}/typing/${sessionId}`).set(false); }, 2500);
                 }
             };
 
             const handleExit = () => {
-                // Rimuove la propria presenza esplicitamente prima di ricaricare
+                sessionStorage.clear(); // Svuota i dati persistenti solo quando si clicca esplicitamente "Esci"
                 database.ref(`rooms/${room}/presence/${sessionId}`).remove().then(() => {
                     window.location.href = window.location.origin + window.location.pathname;
                 });
@@ -351,8 +301,8 @@
                     <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, width:350, border:'1px solid #334155'}}>
                         <div className="logo-icon" style={{margin:'0 auto 20px'}}>🛡️</div>
                         <h1 style={{color:'#6366f1', marginBottom:20}}>EFFIMERA</h1>
-                        <input name="username" className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} onKeyPress={e=>e.key==='Enter' && setIsLogin(false)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
-                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={()=>setIsLogin(false)}>🚀 ENTRA</button>
+                        <input name="username" className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} onKeyPress={e=>e.key==='Enter' && user.trim() && setIsLogin(false)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
+                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={()=>{if(user.trim()) setIsLogin(false)}}>🚀 ENTRA</button>
                     </div>
                 </div>
             );
@@ -398,7 +348,6 @@
                         {isOtherTyping && <div className="typing">... sta scrivendo</div>}
                     </main>
 
-                    {/* Notifica chiamata in arrivo */}
                     {incomingCall && (
                         <div style={{
                             position: 'fixed', top: 80, right: 30, 
@@ -412,17 +361,8 @@
                                 📹 <strong>{incomingCall.from}</strong> ti sta chiamando...
                             </div>
                             <div style={{display: 'flex', gap: 10, justifyContent: 'center'}}>
-                                <button onClick={() => acceptCall(incomingCall.offer)} style={{
-                                    background: '#22c55e', border: 'none', color: 'white',
-                                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'
-                                }}>✅ Accetta</button>
-                                <button onClick={() => {
-                                    database.ref(`rooms/${room}/video/offer`).remove();
-                                    setIncomingCall(null);
-                                }} style={{
-                                    background: '#ef4444', border: 'none', color: 'white',
-                                    padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'
-                                }}>❌ Rifiuta</button>
+                                <button onClick={() => acceptCall(incomingCall.offer)} style={{background: '#22c55e', border: 'none', color: 'white', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'}}>✅ Accetta</button>
+                                <button onClick={() => { database.ref(`rooms/${room}/video/offer`).remove(); setIncomingCall(null); }} style={{background: '#ef4444', border: 'none', color: 'white', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'}}>❌ Rifiuta</button>
                             </div>
                         </div>
                     )}

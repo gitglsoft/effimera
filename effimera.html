@@ -137,30 +137,23 @@
                 });
 
                 // WebRTC offer listener (VERSIONE ROBUSTA)
-                database.ref(`rooms/${room}/video/offer`).on('child_added', async snap => {
+                database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
                     const offerData = snap.val();
-                    console.log('📡 OFFER child_added:', offerData, 'Mio SID:', sessionId);
-                    
                     if (!offerData || offerData.sid === sessionId) return;
-                    if (callActive || incomingCall) {
-                        console.warn('⚠️ Chiamata già attiva, ignoro');
-                        return;
-                    }
+                    if (callActive || incomingCall) return;
                     
-                    console.log('✅ Offer valido! Mostro notifica da:', offerData.from);
                     setIncomingCall({ from: offerData.from, offer: offerData });
                 });
 
-                // Cleanup offer quando si chiude
-                database.ref(`rooms/${room}/video`).on('child_removed', snap => {
-                    if (snap.key === 'offer' && callActive) {
-                        console.log(' Offer rimosso → chiudo chiamata');
+                // Controllo terminazione esplicita del video
+                database.ref(`rooms/${room}/video/callState`).on('value', snap => {
+                    if (snap.val() === 'ended' && callActive) {
                         stopVideo();
                     }
                 });
 
                 return () => database.ref(`rooms/${room}`).off();
-            }, [isLogin, room, user]);
+            }, [isLogin, room, user, callActive, incomingCall]);
 
             // WebRTC answer + ICE candidates listener
             useEffect(() => {
@@ -230,7 +223,7 @@
                     }
 
                     streamRef.current.getTracks().forEach(track => {
-                        pc.current.addTrack(track);
+                        pc.current.addTrack(track, streamRef.current);
                     });
 
                     pc.current.ontrack = (event) => {
@@ -241,22 +234,19 @@
 
                 } catch (err) {
                     console.error("❌ Errore getUserMedia:", err);
-                    alert("⚠️ Impossibile accedere alla videocamera.\n\n1. Clicca sul 🔒 nella barra degli indirizzi\n2. Consenti l'accesso alla videocamera\n3. Ricarica la pagina");
+                    alert("⚠️ Impossibile accedere alla videocamera.\nControlla i permessi del browser.");
                     throw err;
                 }
             };
 
-                        const startCall = async () => {
-                console.log('🚀 Start chiamata...');
+            const startCall = async () => {
                 try {
                     setCallActive(true);
                     await setupWebRTC();
                     const offer = await pc.current.createOffer();
                     await pc.current.setLocalDescription(offer);
                     
-                    console.log(' Invio offer a Firebase...');
-                    
-                    // Usa push() per garantire child_added
+                    await database.ref(`rooms/${room}/video/callState`).set('active');
                     const offerRef = database.ref(`rooms/${room}/video/offer`);
                     await offerRef.set({ 
                         sdp: offer.sdp, 
@@ -265,7 +255,6 @@
                         from: user,
                         ts: Date.now()
                     });
-                    console.log('✅ Offer inviato!');
                 } catch (err) {
                     console.error('❌ Errore startCall:', err);
                     setCallActive(false);
@@ -280,7 +269,7 @@
                     await setupWebRTC();
                     
                     await database.ref(`rooms/${room}/video/answer`).remove();
-                    await database.ref(`rooms/${room}/video/candidates`).remove();
+                    await database.ref(`rooms/${room}/video/candidates/${sessionId}`).remove();
                     
                     await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
                     const answer = await pc.current.createAnswer();
@@ -293,7 +282,6 @@
                     });
                 } catch (err) {
                     console.error('❌ Errore accettazione chiamata:', err);
-                    alert('⚠️ Impossibile accedere alla webcam/microfono.\nControlla i permessi del browser e riprova.');
                     setCallActive(false);
                     stopVideo();
                 }
@@ -307,7 +295,11 @@
                 }
                 setCallActive(false);
                 setIncomingCall(null);
-                database.ref(`rooms/${room}/video`).remove();
+                database.ref(`rooms/${room}/video/callState`).set('ended');
+                // Svuota i dati temporanei del video dopo un secondo per permettere il riaggancio pulito
+                setTimeout(() => {
+                    database.ref(`rooms/${room}/video`).remove();
+                }, 1000);
             };
 
             const handleFile = async (e) => {
@@ -347,6 +339,13 @@
                 }
             };
 
+            const handleExit = () => {
+                // Rimuove la propria presenza esplicitamente prima di ricaricare
+                database.ref(`rooms/${room}/presence/${sessionId}`).remove().then(() => {
+                    window.location.href = window.location.origin + window.location.pathname;
+                });
+            };
+
             if (isLogin) return (
                 <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
                     <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, width:350, border:'1px solid #334155'}}>
@@ -369,7 +368,7 @@
                             <button className="btn btn-invite" onClick={() => {navigator.clipboard.writeText(window.location.href); alert("Link copiato!")}}>🔗 Invita</button>
                             <button className="btn btn-video" onClick={startCall}>📹 Video</button>
                             <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>🗑️ Svuota</button>
-                            <button className="btn btn-exit" onClick={() => window.location.href = window.location.pathname}>🚪 Esci</button>
+                            <button className="btn btn-exit" onClick={handleExit}>🚪 Esci</button>
                         </div>
                     </header>
 
@@ -413,9 +412,7 @@
                                 📹 <strong>{incomingCall.from}</strong> ti sta chiamando...
                             </div>
                             <div style={{display: 'flex', gap: 10, justifyContent: 'center'}}>
-                                <button onClick={() => {
-                                    acceptCall(incomingCall.offer);
-                                }} style={{
+                                <button onClick={() => acceptCall(incomingCall.offer)} style={{
                                     background: '#22c55e', border: 'none', color: 'white',
                                     padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'
                                 }}>✅ Accetta</button>
@@ -440,7 +437,7 @@
 
                     <footer className="footer-container">
                         <div className="emoji-bar">
-                            {['😊','😂','❤️','🔥','','🙌','','😢','','🛡️'].map(e => (
+                            {['😊','😂','❤️','🔥','👍','🙌','😮','😢','🤐','🛡️'].map(e => (
                                 <span key={e} className="emoji-item" onClick={() => {setInput(p => p+e); inputRef.current.focus();}}>{e}</span>
                             ))}
                         </div>

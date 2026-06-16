@@ -15,59 +15,22 @@
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
-        
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
-        
-        /* Header */
-        .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(10,14,39,0.8); z-index: 10; }
+        .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
         .logo-area { display: flex; align-items: center; gap: 12px; }
         .logo-icon { width: 35px; height: 35px; background: #312e81; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; justify-content: center; align-items: center; border: 2px solid #6366f1; }
-        .logo-area h1 { font-size: 24px; letter-spacing: 2px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
-        
-        .actions { display: flex; gap: 8px; align-items: center; }
-        .user-badge { background: #1e293b; padding: 6px 12px; border-radius: 20px; font-size: 13px; border: 1px solid #334155; display: flex; align-items: center; gap: 6px; }
-        .dot { width: 8px; height: 8px; background: #22c55e; border-radius: 50%; box-shadow: 0 0 8px #22c55e; }
-
-        .btn { padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 6px; color: white; font-family: 'Crimson Pro', serif; font-size: 13px; transition: 0.2s; }
-        .btn-invite { background: #4f46e5; }
-        .btn-video { background: #22c55e; }
+        .logo-area h1 { font-size: 24px; color: #6366f1; font-weight: 800; }
+        .actions { display: flex; gap: 8px; }
+        .btn { padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: 600; }
         .btn-clear { background: #991b1b; }
         .btn-exit { background: #9a3412; }
-
-        /* Chat Area */
         .chat-area { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 75%; }
-        .msg-wrap.own { align-self: flex-end; align-items: flex-end; }
-        
-        .sender-info { display: flex; gap: 8px; align-items: center; font-size: 11px; font-weight: bold; text-transform: uppercase; color: #64748b; margin-bottom: 4px; padding: 0 10px; }
-        .msg-time { font-weight: normal; opacity: 0.7; font-size: 10px; }
-
-        .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; font-size: 17px; line-height: 1.4; position: relative; word-break: break-word; }
-        .own .bubble { background: #312e81; border-color: #4338ca; }
-        
-        .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 6px 12px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: bold; }
-        .typing { color: #94a3b8; font-size: 14px; animation: blink 1.4s infinite; padding: 10px 0; }
-        @keyframes blink { 0% { opacity: 0.2; } 50% { opacity: 1; } 100% { opacity: 0.2; } }
-
-        /* Video Box */
-        .video-box { position: fixed; bottom: 140px; right: 30px; width: 280px; height: 380px; background: #000; border-radius: 20px; border: 2px solid #6366f1; z-index: 1000; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .remote-video { width: 100%; height: 100%; object-fit: cover; }
-        .local-video { position: absolute; bottom: 10px; right: 10px; width: 70px; height: 100px; border-radius: 8px; border: 1px solid #6366f1; object-fit: cover; background: #222; }
-
-        /* Footer & Input */
-        .footer-container { background: rgba(10,14,39,0.95); border-top: 1px solid #334155; }
-        .emoji-bar { display: flex; justify-content: center; gap: 18px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
-        .emoji-item { cursor: pointer; font-size: 22px; transition: transform 0.2s; }
-        .emoji-item:hover { transform: scale(1.3); }
-
-        .input-bar { padding: 15px 30px 25px; display: flex; gap: 12px; align-items: flex-start; }
-        .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px; color: white; outline: none; font-size: 16px; }
-        .btn-send { background: #6366f1; width: 50px; height: 50px; border-radius: 12px; border: none; color: white; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
-        .file-group { display: flex; flex-direction: column; align-items: center; gap: 5px; }
-        .btn-file { background: #334155; width: 50px; height: 50px; border-radius: 12px; border: none; color: white; cursor: pointer; font-size: 22px; display: flex; align-items: center; justify-content: center; }
-        .file-label { font-size: 9px; color: #64748b; font-weight: bold; text-transform: uppercase; }
-
-        .attachment-preview { max-width: 100%; border-radius: 10px; margin-top: 10px; border: 1px solid rgba(255,255,255,0.1); }
+        .msg-wrap.own { align-self: flex-end; }
+        .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; }
+        .own .bubble { background: #312e81; }
+        .input-bar { padding: 15px; display: flex; gap: 10px; background: rgba(10,14,39,0.95); }
+        .input-field { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px; color: white; }
     </style>
 </head>
 <body>
@@ -75,7 +38,6 @@
 
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
-
         const firebaseConfig = {
             apiKey: "AIzaSyAMjoh5-A0FX5ImXbyTgUWJSxJE-460dfg",
             authDomain: "effimera.firebaseapp.com",
@@ -85,224 +47,65 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-
-        // Recupera o genera in modo persistente il sessionId all'interno della stessa scheda
-        let sessionId = sessionStorage.getItem('effimera_sid');
-        if (!sessionId) {
-            sessionId = Math.random().toString(36).substring(7);
-            sessionStorage.setItem('effimera_sid', sessionId);
-        }
+        let sessionId = sessionStorage.getItem('effimera_sid') || Math.random().toString(36).substring(7);
+        sessionStorage.setItem('effimera_sid', sessionId);
 
         const App = () => {
-            // Controlla se l'utente si era già loggato in questa sessione
-            const savedUser = sessionStorage.getItem('effimera_user') || '';
-            const [isLogin, setIsLogin] = useState(!savedUser);
-            const [user, setUser] = useState(savedUser);
-            const [room, setRoom] = useState('');
+            const [user, setUser] = useState(sessionStorage.getItem('effimera_user') || '');
+            const [isLogin, setIsLogin] = useState(!user);
+            const [room, setRoom] = useState(new URLSearchParams(window.location.search).get('room') || Math.random().toString(36).substring(2, 9));
             const [messages, setMessages] = useState([]);
-            const [presence, setPresence] = useState([]);
             const [input, setInput] = useState('');
-            const [callActive, setCallActive] = useState(false);
-            const [isOtherTyping, setIsOtherTyping] = useState(false);
-            const [incomingCall, setIncomingCall] = useState(null);
-            
-            const pc = useRef(null);
-            const localVideo = useRef(null);
-            const remoteVideo = useRef(null);
-            const streamRef = useRef(null);
-            const fileInputRef = useRef(null);
-            const inputRef = useRef(null);
-
-            useEffect(() => {
-                const params = new URLSearchParams(window.location.search);
-                let r = params.get('room');
-                if (!r) {
-                    r = Math.random().toString(36).substring(2, 9);
-                    window.history.replaceState({}, '', `?room=${r}`);
-                }
-                setRoom(r);
-            }, []);
 
             useEffect(() => {
                 if (isLogin || !room) return;
-                
-                // Salva lo stato del login per evitare disconnessioni
                 sessionStorage.setItem('effimera_user', user);
 
-                // Messages listener
-                database.ref(`rooms/${room}/messages`).on('value', snap => {
+                // Carichiamo solo gli ultimi 50 messaggi e puliamo quelli vecchi
+                const msgRef = database.ref(`rooms/${room}/messages`).limitToLast(50);
+                msgRef.on('value', snap => {
                     const data = snap.val() || {};
-                    setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
-                });
-                
-                // Presence listener
-                const myPRef = database.ref(`rooms/${room}/presence/${sessionId}`);
-                myPRef.onDisconnect().remove();
-                myPRef.set({ name: user, ts: Date.now() });
-                database.ref(`rooms/${room}/presence`).on('value', s => setPresence(Object.values(s.val() || {})));
-                
-                // Typing listener
-                database.ref(`rooms/${room}/typing`).on('value', s => {
-                    const data = s.val() || {};
-                    setIsOtherTyping(Object.keys(data).some(k => k !== sessionId && data[k] === true));
-                });
-
-                // WebRTC offer listener
-                database.ref(`rooms/${room}/video/offer`).on('value', async snap => {
-                    const offerData = snap.val();
-                    if (!offerData || offerData.sid === sessionId) return;
-                    if (callActive || incomingCall) return;
-                    setIncomingCall({ from: offerData.from, offer: offerData });
-                });
-
-                // Controllo terminazione esplicita del video
-                database.ref(`rooms/${room}/video/callState`).on('value', snap => {
-                    if (snap.val() === 'ended' && callActive) {
-                        stopVideo();
-                    }
-                });
-
-                return () => database.ref(`rooms/${room}`).off();
-            }, [isLogin, room, user, callActive, incomingCall]);
-
-            // WebRTC answer + ICE candidates listener
-            useEffect(() => {
-                if (isLogin || !room || !callActive) return;
-                
-                const answerRef = database.ref(`rooms/${room}/video/answer`);
-                answerRef.on('value', async snap => {
-                    const answer = snap.val();
-                    if (answer && answer.sid !== sessionId && pc.current && pc.current.signalingState !== 'stable') {
-                        try {
-                            await pc.current.setRemoteDescription(new RTCSessionDescription(answer));
-                        } catch (e) { console.warn('Error setting remote answer:', e); }
-                    }
-                });
-
-                const handleIceCandidate = (event) => {
-                    if (event.candidate) {
-                        database.ref(`rooms/${room}/video/candidates/${sessionId}`).push({
-                            candidate: event.candidate.toJSON(),
-                            sid: sessionId,
-                            ts: Date.now()
-                        });
-                    }
-                };
-                
-                if (pc.current) pc.current.onicecandidate = handleIceCandidate;
-
-                const candidatesRef = database.ref(`rooms/${room}/video/candidates`);
-                candidatesRef.on('child_added', async snap => {
-                    const data = snap.val();
-                    if (data && data.sid !== sessionId && pc.current) {
-                        try {
-                            await pc.current.addIceCandidate(new RTCIceCandidate(data.candidate));
-                        } catch (e) { console.warn('ICE candidate error:', e); }
-                    }
-                });
-
-                return () => {
-                    answerRef.off();
-                    candidatesRef.off();
-                    if (pc.current) pc.current.onicecandidate = null;
-                };
-            }, [isLogin, room, callActive]);
-
-            const setupWebRTC = async () => {
-                const config = { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }, { urls: 'stun:stun1.l.google.com:19302' }] };
-                pc.current = new RTCPeerConnection(config);
-                try {
-                    streamRef.current = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480 }, audio: true });
-                    if (localVideo.current) localVideo.current.srcObject = streamRef.current;
-                    streamRef.current.getTracks().forEach(track => pc.current.addTrack(track, streamRef.current));
-                    pc.current.ontrack = (event) => { if (remoteVideo.current) remoteVideo.current.srcObject = event.streams[0]; };
-                } catch (err) {
-                    alert("⚠️ Impossibile accedere alla videocamera. Controlla i permessi.");
-                    throw err;
-                }
-            };
-
-            const startCall = async () => {
-                try {
-                    setCallActive(true);
-                    await setupWebRTC();
-                    const offer = await pc.current.createOffer();
-                    await pc.current.setLocalDescription(offer);
-                    await database.ref(`rooms/${room}/video/callState`).set('active');
-                    await database.ref(`rooms/${room}/video/offer`).set({ sdp: offer.sdp, type: offer.type, sid: sessionId, from: user, ts: Date.now() });
-                } catch (err) { setCallActive(false); }
-            };
-
-            const acceptCall = async (offer) => {
-                try {
-                    setCallActive(true);
-                    setIncomingCall(null);
-                    await setupWebRTC();
-                    await database.ref(`rooms/${room}/video/answer`).remove();
-                    await database.ref(`rooms/${room}/video/candidates/${sessionId}`).remove();
-                    await pc.current.setRemoteDescription(new RTCSessionDescription(offer));
-                    const answer = await pc.current.createAnswer();
-                    await pc.current.setLocalDescription(answer);
-                    database.ref(`rooms/${room}/video/answer`).set({ sdp: answer.sdp, type: answer.type, sid: sessionId });
-                } catch (err) { setCallActive(false); stopVideo(); }
-            };
-
-            const stopVideo = () => {
-                if (streamRef.current) streamRef.current.getTracks().forEach(t => t.stop());
-                if (pc.current) { pc.current.onicecandidate = null; pc.current.close(); }
-                setCallActive(false);
-                setIncomingCall(null);
-                database.ref(`rooms/${room}/video/callState`).set('ended');
-                setTimeout(() => { database.ref(`rooms/${room}/video`).remove(); }, 1000);
-            };
-
-            const handleFile = async (e) => {
-                const file = e.target.files[0];
-                if (!file || file.size > 3 * 1024 * 1024) { if(file) alert("Max 3MB!"); return; }
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    database.ref(`rooms/${room}/messages`).push({
-                        text: `📎 Allegato: ${file.name}`,
-                        fileData: ev.target.result, fileName: file.name, fileType: file.type,
-                        sender: user, sid: sessionId, ts: Date.now()
+                    const now = Date.now();
+                    const msgs = [];
+                    
+                    Object.entries(data).forEach(([id, v]) => {
+                        // Se il messaggio ha più di 30 minuti, lo eliminiamo
+                        if (now - v.ts > 1800000) {
+                            database.ref(`rooms/${room}/messages/${id}`).remove();
+                        } else {
+                            msgs.push({ id, ...v });
+                        }
                     });
-                };
-                reader.readAsDataURL(file);
-                e.target.value = null;
-            };
+                    setMessages(msgs.sort((a,b) => a.ts - b.ts));
+                });
+                return () => database.ref(`rooms/${room}/messages`).off();
+            }, [isLogin, room, user]);
 
             const sendMessage = () => {
                 if (!input.trim()) return;
                 database.ref(`rooms/${room}/messages`).push({ text: input, sender: user, ts: Date.now(), sid: sessionId });
                 setInput('');
-                database.ref(`rooms/${room}/typing/${sessionId}`).set(false);
             };
 
-            const handleInputChange = (e) => {
-                const value = e.target.value;
-                setInput(value);
-                const isTyping = value.length > 0;
-                database.ref(`rooms/${room}/typing/${sessionId}`).set(isTyping);
-                clearTimeout(window.typingTimer);
-                if (isTyping) {
-                    window.typingTimer = setTimeout(() => { database.ref(`rooms/${room}/typing/${sessionId}`).set(false); }, 2500);
-                }
-            };
-
-            const handleExit = () => {
-                sessionStorage.clear(); // Svuota i dati persistenti solo quando si clicca esplicitamente "Esci"
-                database.ref(`rooms/${room}/presence/${sessionId}`).remove().then(() => {
-                    window.location.href = window.location.origin + window.location.pathname;
-                });
+            const handleFile = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                if (file.size > 1024 * 1024) { alert("File troppo grande (Max 1MB)"); return; }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    database.ref(`rooms/${room}/messages`).push({
+                        text: `📎 File: ${file.name}`, fileData: ev.target.result, fileName: file.name, 
+                        sender: user, ts: Date.now(), sid: sessionId 
+                    });
+                };
+                reader.readAsDataURL(file);
             };
 
             if (isLogin) return (
-                <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
-                    <div style={{textAlign:'center', background:'#1e293b', padding:50, borderRadius:30, width:350, border:'1px solid #334155'}}>
-                        <div className="logo-icon" style={{margin:'0 auto 20px'}}>🛡️</div>
-                        <h1 style={{color:'#6366f1', marginBottom:20}}>EFFIMERA</h1>
-                        <input name="username" className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} onKeyPress={e=>e.key==='Enter' && user.trim() && setIsLogin(false)} style={{width:'100%', marginBottom:20, textAlign:'center'}} />
-                        <button className="btn btn-video" style={{width:'100%', justifyContent:'center', padding:15}} onClick={()=>{if(user.trim()) setIsLogin(false)}}>🚀 ENTRA</button>
+                <div style={{display:'grid', placeItems:'center', height:'100vh'}}>
+                    <div style={{background:'#1e293b', padding:30, borderRadius:20}}>
+                        <input className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} />
+                        <button className="btn" style={{background:'#6366f1', marginLeft:10}} onClick={()=>user.trim() && setIsLogin(false)}>ENTRA</button>
                     </div>
                 </div>
             );
@@ -310,91 +113,22 @@
             return (
                 <div className="app-container">
                     <header className="header">
-                        <div className="logo-area"><div className="logo-icon">🛡️</div><h1>EFFIMERA</h1></div>
-                        <div className="actions">
-                            <div style={{display:'flex', gap:5}}>
-                                {presence.map((p, i) => <div key={i} className="user-badge"><div className="dot"></div> {p.name}</div>)}
-                            </div>
-                            <button className="btn btn-invite" onClick={() => {navigator.clipboard.writeText(window.location.href); alert("Link copiato!")}}>🔗 Invita</button>
-                            <button className="btn btn-video" onClick={startCall}>📹 Video</button>
-                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>🗑️ Svuota</button>
-                            <button className="btn btn-exit" onClick={handleExit}>🚪 Esci</button>
-                        </div>
+                        <h1>EFFIMERA</h1>
+                        <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>SVUOTA TUTTO</button>
                     </header>
-
                     <main className="chat-area">
                         {messages.map(m => (
                             <div key={m.id} className={`msg-wrap ${m.sid === sessionId ? 'own' : ''}`}>
-                                <div className="sender-info">
-                                    <span>{m.sender}</span>
-                                    <span className="msg-time">{new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
-                                </div>
-                                <div className="bubble">
-                                    <div id={`txt-${m.id}`} style={{filter: m.sid !== sessionId ? 'blur(6px)' : 'none'}}>
-                                        {m.text}
-                                        {m.fileData && (m.fileType.startsWith('image/') ? 
-                                            <img src={m.fileData} className="attachment-preview" /> : 
-                                            <a href={m.fileData} download={m.fileName} style={{color:'#a855f7', display:'block', marginTop:5}}>📂 {m.fileName}</a>
-                                        )}
-                                    </div>
-                                    {m.sid !== sessionId && <button className="btn-read" onClick={(e) => {
-                                        document.getElementById(`txt-${m.id}`).style.filter='none';
-                                        e.target.innerText = "⏳ Svanisce tra 10s...";
-                                        setTimeout(() => database.ref(`rooms/${room}/messages/${m.id}`).remove(), 10000);
-                                    }}>👁️ Leggi</button>}
-                                </div>
+                                <div className="bubble">{m.text}</div>
                             </div>
                         ))}
-                        {isOtherTyping && <div className="typing">... sta scrivendo</div>}
                     </main>
-
-                    {incomingCall && (
-                        <div style={{
-                            position: 'fixed', top: 80, right: 30, 
-                            background: 'linear-gradient(135deg, #4f46e5, #7c3aed)', 
-                            padding: '15px 20px', borderRadius: 15, 
-                            boxShadow: '0 10px 40px rgba(0,0,0,0.4)',
-                            zIndex: 2000, minWidth: 250, textAlign: 'center',
-                            border: '2px solid #a78bfa', animation: 'pulse 2s infinite'
-                        }}>
-                            <div style={{fontSize: 14, marginBottom: 12}}>
-                                📹 <strong>{incomingCall.from}</strong> ti sta chiamando...
-                            </div>
-                            <div style={{display: 'flex', gap: 10, justifyContent: 'center'}}>
-                                <button onClick={() => acceptCall(incomingCall.offer)} style={{background: '#22c55e', border: 'none', color: 'white', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'}}>✅ Accetta</button>
-                                <button onClick={() => { database.ref(`rooms/${room}/video/offer`).remove(); setIncomingCall(null); }} style={{background: '#ef4444', border: 'none', color: 'white', padding: '8px 16px', borderRadius: 8, cursor: 'pointer', fontWeight: 'bold'}}>❌ Rifiuta</button>
-                            </div>
-                        </div>
-                    )}
-
-                    {callActive && (
-                        <div className="video-box">
-                            <video ref={remoteVideo} className="remote-video" autoPlay playsInline />
-                            <video ref={localVideo} className="local-video" autoPlay muted playsInline />
-                            <button onClick={stopVideo} style={{position:'absolute', top:10, right:10, background:'red', border:'none', color:'white', borderRadius:'50%', width:30, height:30, cursor:'pointer'}}>X</button>
-                        </div>
-                    )}
-
-                    <footer className="footer-container">
-                        <div className="emoji-bar">
-                            {['😊','😂','❤️','🔥','👍','🙌','😮','😢','🤐','🛡️'].map(e => (
-                                <span key={e} className="emoji-item" onClick={() => {setInput(p => p+e); inputRef.current.focus();}}>{e}</span>
-                            ))}
-                        </div>
-                        <div className="input-bar">
-                            <div className="file-group">
-                                <button className="btn-file" onClick={() => fileInputRef.current.click()}>📎</button>
-                                <span className="file-label">Max 3MB</span>
-                            </div>
-                            <input type="file" ref={fileInputRef} style={{display:'none'}} onChange={handleFile} />
-                            <input ref={inputRef} name="message-input" className="input-field" value={input} 
-                                onChange={handleInputChange}
-                                onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Messaggio..." />
-                            <button className="btn-send" onClick={sendMessage}>⚡</button>
-                        </div>
+                    <footer className="input-bar">
+                        <input type="file" id="fileInput" style={{display:'none'}} onChange={handleFile} />
+                        <button className="btn" style={{background:'#334155'}} onClick={() => document.getElementById('fileInput').click()}>📎</button>
+                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} />
+                        <button className="btn" style={{background:'#6366f1'}} onClick={sendMessage}>⚡</button>
                     </footer>
-                    
-                    <style>{`@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.85; } }`}</style>
                 </div>
             );
         };

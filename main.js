@@ -7,13 +7,15 @@ function createWindow() {
     height: 720,
     webPreferences: {
       nodeIntegration: false,
-      contextIsolation: true
+      contextIsolation: true,
+      // Se non hai un file preload.js, rimuovi la riga sotto
+      // preload: path.join(__dirname, 'preload.js') 
     }
   });
 
-  win.loadFile(path.join(__dirname, 'effimera.html'));
-  // Optionally open devtools for debugging
-  // win.webContents.openDevTools();
+  win.loadFile(path.join(__dirname, 'effimera.html')).catch(err => {
+    console.error("Errore nel caricamento del file:", err);
+  });
 }
 
 app.whenReady().then(() => {

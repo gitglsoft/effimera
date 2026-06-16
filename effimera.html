@@ -7,7 +7,6 @@
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
 
@@ -17,13 +16,8 @@
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
         .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .logo-area { display: flex; align-items: center; gap: 12px; }
-        .logo-icon { width: 35px; height: 35px; background: #312e81; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; justify-content: center; align-items: center; border: 2px solid #6366f1; }
-        .logo-area h1 { font-size: 24px; color: #6366f1; font-weight: 800; }
-        .actions { display: flex; gap: 8px; }
         .btn { padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: 600; }
         .btn-clear { background: #991b1b; }
-        .btn-exit { background: #9a3412; }
         .chat-area { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 75%; }
         .msg-wrap.own { align-self: flex-end; }
@@ -36,8 +30,8 @@
 <body>
     <div id="root"></div>
 
-    <script type="text/babel">
-        const { useState, useEffect, useRef } = React;
+    <script>
+        const { useState, useEffect } = React;
         const firebaseConfig = {
             apiKey: "AIzaSyAMjoh5-A0FX5ImXbyTgUWJSxJE-460dfg",
             authDomain: "effimera.firebaseapp.com",
@@ -47,29 +41,24 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        let sessionId = sessionStorage.getItem('effimera_sid') || Math.random().toString(36).substring(7);
+        const sessionId = sessionStorage.getItem('effimera_sid') || Math.random().toString(36).substring(7);
         sessionStorage.setItem('effimera_sid', sessionId);
 
-        const App = () => {
+        function App() {
             const [user, setUser] = useState(sessionStorage.getItem('effimera_user') || '');
             const [isLogin, setIsLogin] = useState(!user);
-            const [room, setRoom] = useState(new URLSearchParams(window.location.search).get('room') || Math.random().toString(36).substring(2, 9));
+            const room = new URLSearchParams(window.location.search).get('room') || 'default';
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
 
             useEffect(() => {
-                if (isLogin || !room) return;
-                sessionStorage.setItem('effimera_user', user);
-
-                // Carichiamo solo gli ultimi 50 messaggi e puliamo quelli vecchi
+                if (isLogin) return;
                 const msgRef = database.ref(`rooms/${room}/messages`).limitToLast(50);
                 msgRef.on('value', snap => {
                     const data = snap.val() || {};
                     const now = Date.now();
                     const msgs = [];
-                    
                     Object.entries(data).forEach(([id, v]) => {
-                        // Se il messaggio ha più di 30 minuti, lo eliminiamo
                         if (now - v.ts > 1800000) {
                             database.ref(`rooms/${room}/messages/${id}`).remove();
                         } else {
@@ -78,8 +67,8 @@
                     });
                     setMessages(msgs.sort((a,b) => a.ts - b.ts));
                 });
-                return () => database.ref(`rooms/${room}/messages`).off();
-            }, [isLogin, room, user]);
+                return () => msgRef.off();
+            }, [isLogin, room]);
 
             const sendMessage = () => {
                 if (!input.trim()) return;
@@ -87,53 +76,31 @@
                 setInput('');
             };
 
-            const handleFile = (e) => {
-                const file = e.target.files[0];
-                if (!file) return;
-                if (file.size > 1024 * 1024) { alert("File troppo grande (Max 1MB)"); return; }
-                const reader = new FileReader();
-                reader.onload = (ev) => {
-                    database.ref(`rooms/${room}/messages`).push({
-                        text: `📎 File: ${file.name}`, fileData: ev.target.result, fileName: file.name, 
-                        sender: user, ts: Date.now(), sid: sessionId 
-                    });
-                };
-                reader.readAsDataURL(file);
-            };
-
-            if (isLogin) return (
-                <div style={{display:'grid', placeItems:'center', height:'100vh'}}>
-                    <div style={{background:'#1e293b', padding:30, borderRadius:20}}>
-                        <input className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} />
-                        <button className="btn" style={{background:'#6366f1', marginLeft:10}} onClick={()=>user.trim() && setIsLogin(false)}>ENTRA</button>
-                    </div>
-                </div>
+            if (isLogin) return React.createElement('div', {style:{display:'grid', placeItems:'center', height:'100vh'}},
+                React.createElement('div', {style:{background:'#1e293b', padding:30, borderRadius:20}},
+                    React.createElement('input', {className:'input-field', placeholder:'Tuo Nome', onChange:e=>setUser(e.target.value)}),
+                    React.createElement('button', {className:'btn', style:{background:'#6366f1', marginLeft:10}, onClick:()=>user.trim() && setIsLogin(false)}, 'ENTRA')
+                )
             );
 
-            return (
-                <div className="app-container">
-                    <header className="header">
-                        <h1>EFFIMERA</h1>
-                        <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>SVUOTA TUTTO</button>
-                    </header>
-                    <main className="chat-area">
-                        {messages.map(m => (
-                            <div key={m.id} className={`msg-wrap ${m.sid === sessionId ? 'own' : ''}`}>
-                                <div className="bubble">{m.text}</div>
-                            </div>
-                        ))}
-                    </main>
-                    <footer className="input-bar">
-                        <input type="file" id="fileInput" style={{display:'none'}} onChange={handleFile} />
-                        <button className="btn" style={{background:'#334155'}} onClick={() => document.getElementById('fileInput').click()}>📎</button>
-                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} />
-                        <button className="btn" style={{background:'#6366f1'}} onClick={sendMessage}>⚡</button>
-                    </footer>
-                </div>
+            return React.createElement('div', {className:'app-container'},
+                React.createElement('header', {className:'header'}, 
+                    React.createElement('h1', null, 'EFFIMERA'),
+                    React.createElement('button', {className:'btn btn-clear', onClick:()=>database.ref(`rooms/${room}/messages`).remove()}, 'SVUOTA')
+                ),
+                React.createElement('main', {className:'chat-area'}, 
+                    messages.map(m => React.createElement('div', {key:m.id, className:`msg-wrap ${m.sid === sessionId ? 'own' : ''}`}, 
+                        React.createElement('div', {className:'bubble'}, m.text)
+                    ))
+                ),
+                React.createElement('footer', {className:'input-bar'},
+                    React.createElement('input', {className:'input-field', value:input, onChange:e=>setInput(e.target.value), onKeyPress:e=>e.key==='Enter' && sendMessage()}),
+                    React.createElement('button', {className:'btn', style:{background:'#6366f1'}, onClick:sendMessage}, '⚡')
+                )
             );
-        };
+        }
 
-        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
     </script>
 </body>
 </html>

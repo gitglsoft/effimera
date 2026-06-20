@@ -7,6 +7,7 @@
 
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.14.0/firebase-database-compat.js"></script>
 
@@ -14,24 +15,45 @@
         @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&display=swap');
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Crimson Pro', serif; background: #0a0e27; color: #e2e8f0; height: 100vh; overflow: hidden; }
+        
         .app-container { height: 100vh; display: flex; flex-direction: column; background: radial-gradient(circle at center, #16213e 0%, #0a0e27 100%); }
-        .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); }
-        .btn { padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer; color: white; font-weight: 600; }
+        
+        .header { padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); background: rgba(10,14,39,0.8); z-index: 10; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-icon { width: 35px; height: 35px; background: #312e81; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; justify-content: center; align-items: center; border: 2px solid #6366f1; }
+        .logo-area h1 { font-size: 24px; letter-spacing: 2px; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-weight: 800; }
+        
+        .actions { display: flex; gap: 8px; align-items: center; }
+        .btn { padding: 8px 14px; border-radius: 10px; border: none; cursor: pointer; font-weight: 600; color: white; font-family: 'Crimson Pro', serif; font-size: 13px; }
+        .btn-invite { background: #4f46e5; }
+        .btn-video { background: #22c55e; }
         .btn-clear { background: #991b1b; }
+        .btn-exit { background: #9a3412; }
+
         .chat-area { flex: 1; overflow-y: auto; padding: 30px; display: flex; flex-direction: column; gap: 20px; }
         .msg-wrap { display: flex; flex-direction: column; max-width: 75%; }
-        .msg-wrap.own { align-self: flex-end; }
-        .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; }
-        .own .bubble { background: #312e81; }
-        .input-bar { padding: 15px; display: flex; gap: 10px; background: rgba(10,14,39,0.95); }
-        .input-field { flex: 1; background: #1e293b; border: 1px solid #334155; border-radius: 10px; padding: 10px; color: white; }
+        .msg-wrap.own { align-self: flex-end; align-items: flex-end; }
+        
+        .bubble { padding: 12px 18px; border-radius: 15px; background: #1e293b; border: 1px solid #334155; font-size: 17px; }
+        .own .bubble { background: #312e81; border-color: #4338ca; }
+        
+        .btn-read { margin-top: 8px; background: rgba(34,197,94,0.1); border: 1px solid #22c55e; color: #22c55e; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        
+        .video-box { position: fixed; bottom: 140px; right: 30px; width: 280px; height: 380px; background: #000; border-radius: 20px; border: 2px solid #6366f1; z-index: 1000; }
+        .remote-video { width: 100%; height: 100%; object-fit: cover; }
+        .local-video { position: absolute; bottom: 10px; right: 10px; width: 70px; height: 100px; border-radius: 8px; border: 1px solid #6366f1; }
+
+        .footer-container { background: rgba(10,14,39,0.95); border-top: 1px solid #334155; padding: 15px 30px; display: flex; gap: 12px; }
+        .input-field { flex: 1; background: #1e293b; border: 2px solid #334155; border-radius: 12px; padding: 15px; color: white; outline: none; }
+        .btn-send { background: #6366f1; width: 50px; height: 50px; border-radius: 12px; border: none; color: white; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-    <script>
-        const { useState, useEffect } = React;
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
         const firebaseConfig = {
             apiKey: "AIzaSyAMjoh5-A0FX5ImXbyTgUWJSxJE-460dfg",
             authDomain: "effimera.firebaseapp.com",
@@ -41,31 +63,35 @@
 
         if (!firebase.apps.length) firebase.initializeApp(firebaseConfig);
         const database = firebase.database();
-        const sessionId = sessionStorage.getItem('effimera_sid') || Math.random().toString(36).substring(7);
-        sessionStorage.setItem('effimera_sid', sessionId);
+        
+        // Session management
+        let sessionId = sessionStorage.getItem('effimera_sid');
+        if (!sessionId) {
+            sessionId = Math.random().toString(36).substring(7);
+            sessionStorage.setItem('effimera_sid', sessionId);
+        }
 
-        function App() {
+        const App = () => {
             const [user, setUser] = useState(sessionStorage.getItem('effimera_user') || '');
             const [isLogin, setIsLogin] = useState(!user);
-            const room = new URLSearchParams(window.location.search).get('room') || 'default';
+            const [room, setRoom] = useState('');
             const [messages, setMessages] = useState([]);
             const [input, setInput] = useState('');
+            const [callActive, setCallActive] = useState(false);
 
             useEffect(() => {
-                if (isLogin) return;
-                const msgRef = database.ref(`rooms/${room}/messages`).limitToLast(50);
+                const params = new URLSearchParams(window.location.search);
+                let r = params.get('room') || Math.random().toString(36).substring(2, 9);
+                if (!params.get('room')) window.history.replaceState({}, '', `?room=${r}`);
+                setRoom(r);
+            }, []);
+
+            useEffect(() => {
+                if (isLogin || !room) return;
+                const msgRef = database.ref(`rooms/${room}/messages`);
                 msgRef.on('value', snap => {
                     const data = snap.val() || {};
-                    const now = Date.now();
-                    const msgs = [];
-                    Object.entries(data).forEach(([id, v]) => {
-                        if (now - v.ts > 1800000) {
-                            database.ref(`rooms/${room}/messages/${id}`).remove();
-                        } else {
-                            msgs.push({ id, ...v });
-                        }
-                    });
-                    setMessages(msgs.sort((a,b) => a.ts - b.ts));
+                    setMessages(Object.entries(data).map(([id, v]) => ({ id, ...v })).sort((a,b) => a.ts - b.ts));
                 });
                 return () => msgRef.off();
             }, [isLogin, room]);
@@ -76,31 +102,48 @@
                 setInput('');
             };
 
-            if (isLogin) return React.createElement('div', {style:{display:'grid', placeItems:'center', height:'100vh'}},
-                React.createElement('div', {style:{background:'#1e293b', padding:30, borderRadius:20}},
-                    React.createElement('input', {className:'input-field', placeholder:'Tuo Nome', onChange:e=>setUser(e.target.value)}),
-                    React.createElement('button', {className:'btn', style:{background:'#6366f1', marginLeft:10}, onClick:()=>user.trim() && setIsLogin(false)}, 'ENTRA')
-                )
+            if (isLogin) return (
+                <div style={{display:'grid', placeItems:'center', height:'100vh', background:'#0a0e27'}}>
+                    <div style={{background:'#1e293b', padding:50, borderRadius:30, textAlign:'center'}}>
+                        <h1 style={{color:'#6366f1', marginBottom:20}}>EFFIMERA</h1>
+                        <input className="input-field" placeholder="Tuo Nome" onChange={e=>setUser(e.target.value)} style={{marginBottom:20, width:'100%'}} />
+                        <button className="btn btn-video" style={{width:'100%', padding:15}} onClick={()=>{if(user.trim()) {sessionStorage.setItem('effimera_user', user); setIsLogin(false)}}}>ENTRA</button>
+                    </div>
+                </div>
             );
 
-            return React.createElement('div', {className:'app-container'},
-                React.createElement('header', {className:'header'}, 
-                    React.createElement('h1', null, 'EFFIMERA'),
-                    React.createElement('button', {className:'btn btn-clear', onClick:()=>database.ref(`rooms/${room}/messages`).remove()}, 'SVUOTA')
-                ),
-                React.createElement('main', {className:'chat-area'}, 
-                    messages.map(m => React.createElement('div', {key:m.id, className:`msg-wrap ${m.sid === sessionId ? 'own' : ''}`}, 
-                        React.createElement('div', {className:'bubble'}, m.text)
-                    ))
-                ),
-                React.createElement('footer', {className:'input-bar'},
-                    React.createElement('input', {className:'input-field', value:input, onChange:e=>setInput(e.target.value), onKeyPress:e=>e.key==='Enter' && sendMessage()}),
-                    React.createElement('button', {className:'btn', style:{background:'#6366f1'}, onClick:sendMessage}, '⚡')
-                )
+            return (
+                <div className="app-container">
+                    <header className="header">
+                        <div className="logo-area"><div className="logo-icon">🛡️</div><h1>EFFIMERA</h1></div>
+                        <div className="actions">
+                            <button className="btn btn-clear" onClick={() => database.ref(`rooms/${room}/messages`).remove()}>SVUOTA</button>
+                        </div>
+                    </header>
+                    <main className="chat-area">
+                        {messages.map(m => (
+                            <div key={m.id} className={`msg-wrap ${m.sid === sessionId ? 'own' : ''}`}>
+                                <div className="bubble">
+                                    <div id={`txt-${m.id}`} style={{filter: m.sid !== sessionId ? 'blur(6px)' : 'none'}}>
+                                        {m.text}
+                                    </div>
+                                    {m.sid !== sessionId && <button className="btn-read" onClick={(e) => {
+                                        document.getElementById(`txt-${m.id}`).style.filter='none';
+                                        e.target.style.display='none';
+                                    }}>👁️ Leggi</button>}
+                                </div>
+                            </div>
+                        ))}
+                    </main>
+                    <footer className="footer-container">
+                        <input className="input-field" value={input} onChange={e=>setInput(e.target.value)} onKeyPress={e=>e.key==='Enter' && sendMessage()} placeholder="Messaggio..." />
+                        <button className="btn-send" onClick={sendMessage}>⚡</button>
+                    </footer>
+                </div>
             );
-        }
+        };
 
-        ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
